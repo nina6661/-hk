@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据预测 - 香港出入境数据统计系统</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>香港出入境数据统计系统</h1>
+            <nav>
+                <a href="/">最新周报</a>
+                <a href="/history">历史数据</a>
+                <a href="/prediction" class="active">数据预测</a>
+            </nav>
+        </header>
+
+        <main>
+            <section class="section">
+                <h2>客流趋势预测</h2>
+                <div class="prediction-controls">
+                    <label for="predict-days">预测天数：</label>
+                    <select id="predict-days">
+                        <option value="7">7天</option>
+                        <option value="14">14天</option>
+                        <option value="30">30天</option>
+                    </select>
+                    <button onclick="loadPrediction()">生成预测</button>
+                </div>
+            </section>
+
+            <section class="section">
+                <h3>预测结果</h3>
+                <div id="prediction-result">
+                    <div class="loading">点击"生成预测"按钮开始</div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h3>预测趋势图</h3>
+                <div class="charts-row">
+                    <div class="chart-box">
+                        <h4>入境预测</h4>
+                        <div id="predict-inbound-chart" class="chart"></div>
+                    </div>
+                    <div class="chart-box">
+                        <h4>出境预测</h4>
+                        <div id="predict-outbound-chart" class="chart"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>数据来源：香港入境事务处</p>
+            <p style="color: #e74c3c;">⚠️ 注意：预测结果仅供参考，实际数据可能有所不同</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPrediction();
+        });
+    </script>
+</body>
+</html>

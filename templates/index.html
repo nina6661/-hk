@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>香港出入境数据统计系统 - 最新周报</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>香港出入境数据统计系统</h1>
+            <nav>
+                <a href="/" class="active">最新周报</a>
+                <a href="/history">历史数据</a>
+                <a href="/prediction">数据预测</a>
+            </nav>
+        </header>
+
+        <main>
+            <div class="report-header">
+                <h2 id="report-title">正在加载最新周报...</h2>
+                <div class="report-meta" id="report-meta"></div>
+            </div>
+
+            <!-- 统计表格 -->
+            <section class="section">
+                <h3>出入境旅客流量统计表</h3>
+                <div id="table-container">
+                    <div class="loading">加载中...</div>
+                </div>
+            </section>
+
+            <!-- 年度对比折线图 -->
+            <section class="section">
+                <h3>年度对比趋势图</h3>
+                <div class="charts-row">
+                    <div class="chart-box">
+                        <h4>入境情况对比</h4>
+                        <div id="inbound-chart" class="chart"></div>
+                    </div>
+                    <div class="chart-box">
+                        <h4>出境情况对比</h4>
+                        <div id="outbound-chart" class="chart"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 周度汇报小抄 -->
+            <section class="section">
+                <h3>周度数据汇报小抄</h3>
+                <div id="summary-container">
+                    <div class="loading">加载中...</div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>数据来源：香港特别行政区政府入境事务处</p>
+            <p>系统更新时间：<span id="update-time"></span></p>
+        </footer>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+    <script>
+        // 页面加载时获取最新周报
+        document.addEventListener('DOMContentLoaded', function() {
+            loadCurrentWeekReport();
+            loadYearComparisonCharts();
+        });
+    </script>
+</body>
+</html>

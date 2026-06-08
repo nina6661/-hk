@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>历史数据 - 香港出入境数据统计系统</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>香港出入境数据统计系统</h1>
+            <nav>
+                <a href="/">最新周报</a>
+                <a href="/history" class="active">历史数据</a>
+                <a href="/prediction">数据预测</a>
+            </nav>
+        </header>
+
+        <main>
+            <section class="section query-section">
+                <h2>历史查询</h2>
+                <div class="query-controls">
+                    <!-- 按周查询 -->
+                    <div class="control-group">
+                        <label for="week-picker">按周查询：</label>
+                        <input type="date" id="week-picker">
+                        <button onclick="queryByWeek()">查询</button>
+                    </div>
+                    
+                    <!-- 自定义范围查询 -->
+                    <div class="control-group">
+                        <label>自定义区间：</label>
+                        <input type="date" id="start-date">
+                        <span>至</span>
+                        <input type="date" id="end-date">
+                        <button onclick="queryByRange()">查询</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 结果显示 -->
+            <section class="section" id="result-section" style="display:none;">
+                <div class="report-header">
+                    <h2 id="result-title"></h2>
+                    <div class="report-meta" id="result-meta"></div>
+                </div>
+                
+                <section class="section">
+                    <h3>出入境流量统计</h3>
+                    <div id="history-table-container"></div>
+                </section>
+                
+                <section class="section">
+                    <h3>年度对比图</h3>
+                    <div class="charts-row">
+                        <div class="chart-box">
+                            <h4>入境</h4>
+                            <div id="history-inbound-chart" class="chart"></div>
+                        </div>
+                        <div class="chart-box">
+                            <h4>出境</h4>
+                            <div id="history-outbound-chart" class="chart"></div>
+                        </div>
+                    </div>
+                </section>
+                
+                <section class="section">
+                    <h3>数据小抄</h3>
+                    <div id="history-summary"></div>
+                </section>
+            </section>
+        </main>
+
+        <footer>
+            <p>数据来源：香港入境事务处</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设置默认为上周
+            const today = new Date();
+            const lastWeek = new Date(today);
+            lastWeek.setDate(today.getDate() - 7);
+            document.getElementById('week-picker').value = lastWeek.toISOString().split('T')[0];
+        });
+    </script>
+</body>
+</html>
