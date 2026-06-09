@@ -494,6 +494,8 @@ function genReportForWeek(wk){
   // 上年同期ISO周对齐
   var isoWk=getISOWeek(dts(wk.start));
   var lastYear=wk.start.getFullYear()-1;
+  var lyYear=lastYear;
+  var lyWeek=isoWk;
   var lyMon=getISOWeekMonday(lastYear,isoWk);
   var lyDates=weekDates(dts(lyMon));
   var lyPrev=new Date(lyMon);lyPrev.setDate(lyPrev.getDate()-7);
