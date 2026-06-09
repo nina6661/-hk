@@ -3,11 +3,14 @@ name: Update Border Data
 on:
   schedule:
     - cron: '30 1 * * 1'  # 每周一 9:30 北京时间
-  workflow_dispatch:  # 手动触发
+  workflow_dispatch:  # 允许手动触发
 
 jobs:
   update:
     runs-on: ubuntu-latest
+    
+    permissions:
+      contents: write  # 授予写入权限
     
     steps:
     - name: Checkout
@@ -26,18 +29,12 @@ import json
 import urllib.request
 from datetime import datetime
 
-# 下载最新数据
 url = "https://data.gov.hk/tc-data/dataset/hk-immd-set5-statistics-daily-passenger-traffic/resource/b341ea9a-7a34-4e33-95f7-5b297845ef43/download/transport_immigration_clearance_entry_exit.csv"
-print("正在下载数据...")
 urllib.request.urlretrieve(url, '/tmp/data.csv')
 
-# 读取现有数据
 with open('data.json', 'r', encoding='utf-8') as f:
     data = json.load(f)
 
-print(f"现有数据: {len(data)} 天")
-
-# 解析CSV
 new_count = 0
 with open('/tmp/data.csv', 'r', encoding='utf-8-sig') as f:
     reader = csv.DictReader(f)
@@ -46,9 +43,7 @@ with open('/tmp/data.csv', 'r', encoding='utf-8-sig') as f:
         try:
             dt = datetime.strptime(date_str, '%d-%m-%Y')
             key = dt.strftime('%Y-%m-%d')
-            
-            if key in data:  # 已存在则跳过
-                continue
+            if key in data: continue
             
             direction = row['入境 / 出境']
             hk = int(row['香港居民'] or 0)
@@ -58,8 +53,8 @@ with open('/tmp/data.csv', 'r', encoding='utf-8-sig') as f:
             
             if key not in data:
                 data[key] = {
-                    'inbound': {'hk': 0, 'mainland': 0, 'other': 0, 'total': 0},
-                    'outbound': {'hk': 0, 'mainland': 0, 'other': 0, 'total': 0}
+                    'inbound': {'hk':0,'mainland':0,'other':0,'total':0},
+                    'outbound': {'hk':0,'mainland':0,'other':0,'total':0}
                 }
             
             if direction == '入境':
@@ -74,14 +69,13 @@ with open('/tmp/data.csv', 'r', encoding='utf-8-sig') as f:
                 data[key]['outbound']['total'] += total
             
             new_count += 1
-        except Exception as e:
+        except:
             continue
 
-# 保存
 with open('data.json', 'w', encoding='utf-8') as f:
     json.dump(data, f, ensure_ascii=False, separators=(',', ':'))
 
-print(f"数据更新完成！新增 {new_count} 天数据，总计 {len(data)} 天")
+print(f"数据更新完成！新增 {new_count} 天")
 EOF
 
     - name: Commit changes
