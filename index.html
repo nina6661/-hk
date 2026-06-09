@@ -684,10 +684,149 @@ function qRange(){
 }
 
 function genPredict(){
-  var al=Object.keys(DATA).sort(),rc=al.slice(-30),it=0,ot=0;
-  rc.forEach(function(d){if(DATA[d]){it+=DATA[d].inbound?.total||0;ot+=DATA[d].outbound?.total||0}});
-  var ia=it/rc.length,oa=ot/rc.length;
-  return '<div class="section"><h3>客流趋势预测</h3><p style="margin-bottom:20px">基于最近30天数据移动平均：</p><table><thead><tr><th>预测天数</th><th>入境(万)</th><th>出境(万)</th></tr></thead><tbody><tr><td>7天</td><td>'+fmtN(ia)+'</td><td>'+fmtN(oa)+'</td></tr><tr><td>14天</td><td>'+fmtN(ia)+'</td><td>'+fmtN(oa)+'</td></tr><tr><td>30天</td><td>'+fmtN(ia)+'</td><td>'+fmtN(oa)+'</td></tr></tbody></table><p style="margin-top:20px;color:#e74c3c">⚠️ 预测仅供参考</p></div>';
+  var today=new Date();
+  var day=today.getDay(),diff=today.getDate()-day+(day===0?-6:1);
+  var thisWeekMon=new Date(today);thisWeekMon.setDate(diff);
+  var nextWeekMon=new Date(thisWeekMon);nextWeekMon.setDate(thisWeekMon.getDate()+7);
+  
+  var thisWeekStart=new Date(thisWeekMon);
+  var thisWeekEnd=new Date(thisWeekMon);thisWeekEnd.setDate(thisWeekMon.getDate()+6);
+  var nextWeekStart=new Date(nextWeekMon);
+  var nextWeekEnd=new Date(nextWeekMon);nextWeekEnd.setDate(nextWeekMon.getDate()+6);
+  
+  var lyThisWeekStart=new Date(thisWeekStart);lyThisWeekStart.setFullYear(thisWeekStart.getFullYear()-1);
+  var lyLastWeekStart=new Date(lyThisWeekStart);lyLastWeekStart.setDate(lyThisWeekStart.getDate()-7);
+  var lyNextWeekStart=new Date(lyThisWeekStart);lyNextWeekStart.setDate(lyThisWeekStart.getDate()+7);
+  
+  function getWeekData(startDate){
+    var dates=[];
+    for(var i=0;i<7;i++){var d=new Date(startDate);d.setDate(startDate.getDate()+i);dates.push(dts(d));}
+    return weekStats(dates);
+  }
+  
+  var lastWeekStart=new Date(thisWeekMon);lastWeekStart.setDate(thisWeekMon.getDate()-7);
+  var weekMinus2=new Date(thisWeekMon);weekMinus2.setDate(thisWeekMon.getDate()-14);
+  var weekMinus3=new Date(thisWeekMon);weekMinus3.setDate(thisWeekMon.getDate()-21);
+  var weekMinus4=new Date(thisWeekMon);weekMinus4.setDate(thisWeekMon.getDate()-28);
+  
+  var sLastWeek=getWeekData(lastWeekStart);
+  var sWeekM2=getWeekData(weekMinus2);
+  var sWeekM3=getWeekData(weekMinus3);
+  var sWeekM4=getWeekData(weekMinus4);
+  
+  var lyThisWeek=getWeekData(lyThisWeekStart);
+  var lyLastWeek=getWeekData(lyLastWeekStart);
+  var lyNextWeek=getWeekData(lyNextWeekStart);
+  
+  var cats=[{key:'total',name:'整体'},{key:'hk',name:'香港居民'},{key:'mainland',name:'内地旅客'},{key:'other',name:'外国旅客'}];
+  
+  function predictWeek(weekType){
+    var results=[];
+    var notes=[];
+    
+    cats.forEach(function(cat){
+      if(cat.key==='total'){
+        var lastWeekIn=avg(sLastWeek.inbound.total);
+        var lastWeekOut=avg(sLastWeek.outbound.total);
+        var weekM2In=avg(sWeekM2.inbound.total);
+        var weekM2Out=avg(sWeekM2.outbound.total);
+        var weekM3In=avg(sWeekM3.inbound.total);
+        var weekM3Out=avg(sWeekM3.outbound.total);
+        var weekM4In=avg(sWeekM4.inbound.total);
+        var weekM4Out=avg(sWeekM4.outbound.total);
+        var lyThisIn=avg(lyThisWeek.inbound.total);
+        var lyThisOut=avg(lyThisWeek.outbound.total);
+        var lyLastIn=avg(lyLastWeek.inbound.total);
+        var lyLastOut=avg(lyLastWeek.outbound.total);
+        var lyNextIn=avg(lyNextWeek.inbound.total);
+        var lyNextOut=avg(lyNextWeek.outbound.total);
+      }else{
+        var lastWeekIn=avg(sLastWeek.inbound[cat.key]);
+        var lastWeekOut=avg(sLastWeek.outbound[cat.key]);
+        var weekM2In=avg(sWeekM2.inbound[cat.key]);
+        var weekM2Out=avg(sWeekM2.outbound[cat.key]);
+        var weekM3In=avg(sWeekM3.inbound[cat.key]);
+        var weekM3Out=avg(sWeekM3.outbound[cat.key]);
+        var weekM4In=avg(sWeekM4.inbound[cat.key]);
+        var weekM4Out=avg(sWeekM4.outbound[cat.key]);
+        var lyThisIn=avg(lyThisWeek.inbound[cat.key]);
+        var lyThisOut=avg(lyThisWeek.outbound[cat.key]);
+        var lyLastIn=avg(lyLastWeek.inbound[cat.key]);
+        var lyLastOut=avg(lyLastWeek.outbound[cat.key]);
+        var lyNextIn=avg(lyNextWeek.inbound[cat.key]);
+        var lyNextOut=avg(lyNextWeek.outbound[cat.key]);
+      }
+      
+      var lyIn=weekType==='本周'?lyThisIn:lyNextIn;
+      var lyOut=weekType==='本周'?lyThisOut:lyNextOut;
+      var lyPrevIn=weekType==='本周'?lyLastIn:lyThisIn;
+      var lyPrevOut=weekType==='本周'?lyLastOut:lyThisOut;
+      
+      var lyChgIn=(lyIn-lyPrevIn)/lyPrevIn;
+      var lyChgOut=(lyOut-lyPrevOut)/lyPrevOut;
+      var baseIn=lastWeekIn*(1+lyChgIn);
+      var baseOut=lastWeekOut*(1+lyChgOut);
+      
+      var avg4In=(weekM2In+weekM3In+weekM4In)/3;
+      var avg4Out=(weekM2Out+weekM3Out+weekM4Out)/3;
+      
+      var devIn=(lastWeekIn-avg4In)/avg4In;
+      var devOut=(lastWeekOut-avg4Out)/avg4Out;
+      
+      var finalIn=baseIn,finalOut=baseOut;
+      var beta=0.6;
+      var note='';
+      
+      if(devOut>0.10){
+        finalIn=baseIn*(1+beta*devOut);
+        finalOut=baseOut*(1-beta*devOut);
+        note=cat.name+'：出境偏离率'+fmtP(devOut*100)+'，触发修正';
+      }else if(devIn>0.10){
+        finalOut=baseOut*(1+beta*devIn);
+        note=cat.name+'：入境偏离率'+fmtP(devIn*100)+'，触发修正';
+      }
+      
+      var chgIn=(finalIn-lastWeekIn)/lastWeekIn*100;
+      var chgOut=(finalOut-lastWeekOut)/lastWeekOut*100;
+      
+      results.push({
+        name:cat.name,
+        outPred:finalOut,
+        outChg:chgOut,
+        inPred:finalIn,
+        inChg:chgIn
+      });
+      
+      if(note)notes.push(note);
+    });
+    
+    return{results:results,notes:notes};
+  }
+  
+  function genPredTable(title,startDate,endDate,predData){
+    var h='<div class="section"><h3>'+title+' ('+dts(startDate)+' 至 '+dts(endDate)+')</h3><table><thead><tr><th>人群</th><th>预测出境人数(万)</th><th>出境环比</th><th>预测入境人数(万)</th><th>入境环比</th></tr></thead><tbody>';
+    predData.results.forEach(function(r){
+      h+='<tr><td style="text-align:left;">'+r.name+'</td><td>'+fmtN(r.outPred)+'</td><td class="'+clsC(r.outChg)+'">'+fmtP(r.outChg)+'</td><td>'+fmtN(r.inPred)+'</td><td class="'+clsC(r.inChg)+'">'+fmtP(r.inChg)+'</td></tr>';
+    });
+    h+='</tbody></table>';
+    if(predData.notes.length>0){
+      h+='<p style="margin-top:10px;font-size:12px;color:#666;">📋 修正说明：'+predData.notes.join('；')+'</p>';
+    }else{
+      h+='<p style="margin-top:10px;font-size:12px;color:#666;">📋 上周数据无异常偏离，未触发修正</p>';
+    }
+    h+='</div>';
+    return h;
+  }
+  
+  var thisWeekPred=predictWeek('本周');
+  var nextWeekPred=predictWeek('下周');
+  
+  var html='<div style="text-align:center;margin:30px 0;"><h2 style="font-size:20px;font-weight:bold;color:#2c3e50;display:inline-block;white-space:nowrap;">————————— 客流预测（参考去年趋势+4周偏离） ——————————</h2></div>';
+  html+=genPredTable('本周预测',thisWeekStart,thisWeekEnd,thisWeekPred);
+  html+=genPredTable('下周预测',nextWeekStart,nextWeekEnd,nextWeekPred);
+  html+='<div class="section"><p style="color:#e74c3c;font-size:12px;">⚠️ 预测基于历史数据推算，仅供参考</p></div>';
+  
+  return html;
 }
 
 function showPage(p){
