@@ -68,7 +68,7 @@ function tryRender() {
   if (Object.keys(DATA).length > 0) {
     try {
       var dates = Object.keys(DATA).sort();
-      document.getElementById('dataRange').textContent = dates[0] + ' 至 ' + dates[dates.length - 1];
+      (document.getElementById('dataRange') || {}).textContent = dates[0] + ' 至 ' + dates[dates.length - 1];
       content.innerHTML = genReport();
     } catch(e) {
       content.innerHTML = '<div class="loading">渲染错误：' + e.message + '</div>';
