@@ -59,20 +59,47 @@ footer{margin-top:30px;padding:20px;text-align:center;color:#7f8c8d;font-size:14
 </div>
 <script>
 let DATA = {};
-fetch('data.json')
-  .then(r => r.json())
-  .then(d => {
-    DATA = d;
-    const dates = Object.keys(DATA).sort();
-    if (dates.length > 0) {
-      document.getElementById('dataRange').textContent = dates[0] + ' 至 ' + dates[dates.length - 1];
-    }
-    document.getElementById('content').innerHTML = genReport();
-  })
-  .catch(e => {
-    document.getElementById('content').innerHTML = '<div class="loading">数据加载失败，请刷新重试</div>';
-    console.error(e);
-  });
+// 等待DOM解析完成后再加载数据
+document.addEventListener('DOMContentLoaded', function() {
+  var content = document.getElementById('content');
+  fetch('data.json')
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      DATA = d;
+      var dates = Object.keys(DATA).sort();
+      if (dates.length > 0) {
+        document.getElementById('dataRange').textContent = dates[0] + ' 至 ' + dates[dates.length - 1];
+      }
+      try {
+        content.innerHTML = genReport();
+      } catch(e) {
+        content.innerHTML = '<div class="loading">渲染错误：' + e.message + '<br><a href="javascript:location.reload()">点击刷新</a></div>';
+        console.error(e);
+      }
+    })
+    .catch(function(e) {
+      // fetch失败可能是暂时的，延迟2秒重试一次
+      setTimeout(function() {
+        fetch('data.json')
+          .then(function(r) { return r.json(); })
+          .then(function(d) {
+            DATA = d;
+            var dates = Object.keys(DATA).sort();
+            if (dates.length > 0) {
+              document.getElementById('dataRange').textContent = dates[0] + ' 至 ' + dates[dates.length - 1];
+            }
+            try {
+              content.innerHTML = genReport();
+            } catch(e2) {
+              content.innerHTML = '<div class="loading">渲染错误：' + e2.message + '<br><a href="javascript:location.reload()">点击刷新</a></div>';
+            }
+          })
+          .catch(function() {
+            content.innerHTML = '<div class="loading">数据加载失败<br><small>请检查网络后 <a href="javascript:location.reload()">刷新页面</a></small></div>';
+          });
+      }, 2000);
+    });
+});
 
 // 工具函数
 function fmtD(s){var d=new Date(s);return(d.getMonth()+1)+'/'+d.getDate()}
