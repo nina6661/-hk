@@ -10,6 +10,7 @@ with open('data.json', 'r', encoding='utf-8') as f:
     data = json.load(f)
 
 new_count = 0
+existing_keys = set(data.keys())
 with open('/tmp/data.csv', 'r', encoding='utf-8-sig') as f:
     reader = csv.DictReader(f)
     for row in reader:
@@ -17,7 +18,7 @@ with open('/tmp/data.csv', 'r', encoding='utf-8-sig') as f:
         try:
             dt = datetime.strptime(date_str, '%d-%m-%Y')
             key = dt.strftime('%Y-%m-%d')
-            if key in data:
+            if key in existing_keys:
                 continue
             direction = row['入境 / 出境']
             hk = int(row['香港居民'] or 0)
