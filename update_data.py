@@ -1,6 +1,8 @@
 import csv
 import json
 import urllib.request
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 from datetime import datetime
 
 url = "https://data.gov.hk/tc-data/dataset/hk-immd-set5-statistics-daily-passenger-traffic/resource/b341ea9a-7a34-4e33-95f7-5b297845ef43/download/transport_immigration_clearance_entry_exit.csv"
