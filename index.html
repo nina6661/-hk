@@ -699,6 +699,84 @@ function qRange(){
   document.getElementById('hr').innerHTML='<div class="section"><h3>查询结果 ('+s+' 至 '+e+')</h3><table><thead><tr><th>指标</th><th>入境(万)</th><th>出境(万)</th></tr></thead><tbody><tr><td>日均总流量</td><td>'+fmtN(avg(st.inbound.total))+'</td><td>'+fmtN(avg(st.outbound.total))+'</td></tr><tr><td>港人日均</td><td>'+fmtN(avg(st.inbound.hk))+'</td><td>'+fmtN(avg(st.outbound.hk))+'</td></tr><tr><td>内地旅客日均</td><td>'+fmtN(avg(st.inbound.mainland))+'</td><td>'+fmtN(avg(st.outbound.mainland))+'</td></tr><tr><td>外国旅客日均</td><td>'+fmtN(avg(st.inbound.other))+'</td><td>'+fmtN(avg(st.outbound.other))+'</td></tr></tbody></table></div>';
 }
 
+// ===== 假期 & 活动数据 =====
+var HOLIDAY={};
+(function(){
+var d=[
+'2026-05-01,1,1,0,0,0|2026-05-02,0,1,1,1,0|2026-05-03,0,1,1,1,0|2026-05-04,0,1,0,0,0|2026-05-05,0,1,0,0,0|2026-05-06,0,0,0,0,0|2026-05-07,0,0,0,0,0|2026-05-08,0,0,0,0,0|2026-05-09,0,0,1,0,0|2026-05-10,0,0,1,1,0',
+'2026-05-11,0,0,0,0,0|2026-05-12,0,0,0,0,0|2026-05-13,0,0,0,0,0|2026-05-14,0,0,0,0,0|2026-05-15,0,0,0,0,0|2026-05-16,0,0,1,1,0|2026-05-17,0,0,1,1,0|2026-05-18,0,0,0,0,0|2026-05-19,0,0,0,0,0|2026-05-20,0,0,0,0,0',
+'2026-05-21,0,0,0,0,0|2026-05-22,0,0,0,0,0|2026-05-23,0,0,1,1,0|2026-05-24,1,0,1,1,0|2026-05-25,0,0,0,0,0|2026-05-26,0,0,0,0,0|2026-05-27,0,0,0,0,0|2026-05-28,0,0,0,0,0|2026-05-29,0,0,0,0,0|2026-05-30,0,0,1,1,0',
+'2026-05-31,0,0,1,1,0|2026-06-01,0,0,0,0,0|2026-06-02,0,0,0,0,0|2026-06-03,0,0,0,0,0|2026-06-04,0,0,0,0,0|2026-06-05,0,0,0,0,0|2026-06-06,0,0,1,1,0|2026-06-07,0,0,1,1,0|2026-06-08,0,0,0,0,0|2026-06-09,0,0,0,0,0',
+'2026-06-10,0,0,0,0,0|2026-06-11,0,0,0,0,0|2026-06-12,0,0,0,0,0|2026-06-13,0,0,1,1,0|2026-06-14,0,0,1,1,0|2026-06-15,0,0,0,0,0|2026-06-16,0,0,0,0,0|2026-06-17,0,0,0,0,0|2026-06-18,0,0,0,0,0|2026-06-19,1,1,0,0,0',
+'2026-06-20,0,1,1,1,0|2026-06-21,0,1,1,1,0|2026-06-22,0,0,0,0,0|2026-06-23,0,0,0,0,0|2026-06-24,0,0,0,0,0|2026-06-25,0,0,0,0,0|2026-06-26,0,0,0,0,0|2026-06-27,0,0,1,1,0|2026-06-28,0,0,1,1,0|2026-06-29,0,0,0,0,0',
+'2026-06-30,0,0,0,0,0|2026-07-01,1,0,0,0,0|2026-07-02,0,0,0,0,0|2026-07-03,0,0,0,0,0|2026-07-04,0,0,1,1,0|2026-07-05,0,0,1,1,0|2026-07-06,0,0,0,0,0|2026-07-07,0,0,0,0,0|2026-07-08,0,0,0,0,0|2026-07-09,0,0,0,0,0',
+'2026-07-10,0,0,0,0,0|2026-07-11,0,0,1,1,0|2026-07-12,0,0,1,1,0|2026-07-13,0,0,0,0,0|2026-07-14,0,0,0,0,0|2026-07-15,0,0,0,0,0|2026-07-16,0,0,0,0,0|2026-07-17,0,0,0,0,0|2026-07-18,0,0,1,1,0|2026-07-19,0,0,1,1,0',
+'2026-07-20,0,0,0,0,0|2026-07-21,0,0,0,0,0|2026-07-22,0,0,0,0,0|2026-07-23,0,0,0,0,0|2026-07-24,0,0,0,0,0|2026-07-25,0,0,1,1,0|2026-07-26,0,0,1,1,0|2026-07-27,0,0,0,0,0|2026-07-28,0,0,0,0,0|2026-07-29,0,0,0,0,0',
+'2026-07-30,0,0,0,0,0|2026-07-31,0,0,0,0,0|2026-08-01,0,0,1,1,0|2026-08-02,0,0,1,1,0|2026-08-03,0,0,0,0,0|2026-08-04,0,0,0,0,0|2026-08-05,0,0,0,0,0|2026-08-06,0,0,0,0,0|2026-08-07,0,0,0,0,0|2026-08-08,0,0,1,1,0',
+'2026-08-09,0,0,1,1,0|2026-08-10,0,0,0,0,0|2026-08-11,0,0,0,0,0|2026-08-12,0,0,0,0,0|2026-08-13,0,0,0,0,0|2026-08-14,0,0,0,0,0|2026-08-15,0,0,1,1,0|2026-08-16,0,0,1,1,0|2026-08-17,0,0,0,0,0|2026-08-18,0,0,0,0,0',
+'2026-08-19,0,0,0,0,0|2026-08-20,0,0,0,0,0|2026-08-21,0,0,0,0,0|2026-08-22,0,0,1,1,0|2026-08-23,0,0,1,1,0|2026-08-24,0,0,0,0,0|2026-08-25,0,0,0,0,0|2026-08-26,0,0,0,0,0|2026-08-27,0,0,0,0,0|2026-08-28,0,0,0,0,0',
+'2026-08-29,0,0,1,1,0|2026-08-30,0,0,1,1,0|2026-08-31,0,0,0,0,0|2026-09-01,0,0,0,0,0|2026-09-02,0,0,0,0,0|2026-09-03,0,0,0,0,0|2026-09-04,0,0,0,0,0|2026-09-05,0,0,1,1,0|2026-09-06,0,0,1,1,0|2026-09-07,0,0,0,0,0',
+'2026-09-08,0,0,0,0,0|2026-09-09,0,0,0,0,0|2026-09-10,0,0,0,0,0|2026-09-11,0,0,0,0,0|2026-09-12,0,0,1,1,0|2026-09-13,0,0,1,1,0|2026-09-14,0,0,0,0,0|2026-09-15,0,0,0,0,0|2026-09-16,0,0,0,0,0|2026-09-17,0,0,0,0,0',
+'2026-09-18,0,0,0,0,0|2026-09-19,0,0,1,1,0|2026-09-20,0,0,1,1,0|2026-09-21,0,0,0,0,0|2026-09-22,0,0,0,0,0|2026-09-23,0,0,0,0,0|2026-09-24,0,0,0,0,0|2026-09-25,0,0,0,0,0|2026-09-26,0,0,1,1,0|2026-09-27,0,0,1,1,0',
+'2026-09-28,0,0,0,0,0|2026-09-29,0,0,0,0,0|2026-09-30,0,0,0,0,0|2026-10-01,1,1,0,0,0|2026-10-02,0,1,0,0,0|2026-10-03,0,1,1,1,0|2026-10-04,0,1,1,1,0|2026-10-05,0,1,0,0,0|2026-10-06,0,1,0,0,0|2026-10-07,0,1,0,0,0',
+'2026-10-08,0,0,0,0,0|2026-10-09,0,0,0,0,0|2026-10-10,0,0,1,1,0|2026-10-11,0,0,1,1,0|2026-10-12,0,0,0,0,0|2026-10-13,0,0,0,0,0|2026-10-14,0,0,0,0,0|2026-10-15,0,0,0,0,0|2026-10-16,0,0,0,0,0|2026-10-17,0,0,1,1,0',
+'2026-10-18,0,0,1,1,0|2026-10-19,0,0,0,0,0|2026-10-20,0,0,0,0,0|2026-10-21,0,0,0,0,1|2026-10-22,0,0,0,0,0|2026-10-23,0,0,0,0,0|2026-10-24,0,0,1,1,1|2026-10-25,0,0,1,1,1|2026-10-26,1,0,0,0,0|2026-10-27,0,0,0,0,0',
+'2026-10-28,0,0,0,0,0|2026-10-29,0,0,0,0,0|2026-10-30,0,0,0,0,1|2026-10-31,0,0,1,1,1|2026-11-01,0,0,1,1,0|2026-11-02,0,0,0,0,0|2026-11-03,0,0,0,0,0|2026-11-04,0,0,0,0,0|2026-11-05,0,0,0,0,0|2026-11-06,0,0,0,0,0',
+'2026-11-07,0,0,1,1,0|2026-11-08,0,0,1,1,0|2026-11-09,0,0,0,0,0|2026-11-10,0,0,0,0,0|2026-11-11,0,0,0,0,0|2026-11-12,0,0,0,0,0|2026-11-13,0,0,0,0,1|2026-11-14,0,0,1,1,1|2026-11-15,0,0,1,1,1|2026-11-16,0,0,0,0,0',
+'2026-11-17,0,0,0,0,0|2026-11-18,0,0,0,0,0|2026-11-19,0,0,0,0,0|2026-11-20,0,0,0,0,0|2026-11-21,0,0,1,1,0|2026-11-22,0,0,1,1,0|2026-11-23,0,0,0,0,0|2026-11-24,0,0,0,0,0|2026-11-25,0,0,0,0,0|2026-11-26,0,0,0,0,0',
+'2026-11-27,0,0,0,0,0|2026-11-28,0,0,1,1,0|2026-11-29,0,0,1,1,0|2026-11-30,0,0,0,0,0|2026-12-01,0,0,0,0,0|2026-12-02,0,0,0,0,0|2026-12-03,0,0,0,0,0|2026-12-04,0,0,0,0,0|2026-12-05,0,0,1,1,0|2026-12-06,0,0,1,1,0',
+'2026-12-07,0,0,0,0,0|2026-12-08,0,0,0,0,0|2026-12-09,0,0,0,0,0|2026-12-10,0,0,0,0,0|2026-12-11,0,0,0,0,0|2026-12-12,0,0,1,1,0|2026-12-13,0,0,1,1,0|2026-12-14,0,0,0,0,0|2026-12-15,0,0,0,0,0|2026-12-16,0,0,0,0,0',
+'2026-12-17,0,0,0,0,0|2026-12-18,0,0,0,0,0|2026-12-19,0,0,1,1,0|2026-12-20,0,0,1,1,0|2026-12-21,0,0,0,0,0|2026-12-22,0,0,0,0,0|2026-12-23,0,0,0,0,0|2026-12-24,0,0,0,0,0|2026-12-25,1,0,0,0,0|2026-12-26,0,0,1,1,0',
+'2026-12-27,0,0,1,1,0|2026-12-28,0,0,0,0,0|2026-12-29,0,0,0,0,0|2026-12-30,0,0,0,0,0|2026-12-31,0,0,0,0,0'
+].join('|');
+d.split('|').forEach(function(r){var p=r.split(',');HOLIDAY[p[0]]={hh:+p[1],hc:+p[2],wh:+p[3],wc:+p[4],act:+p[5]};});
+})();
+
+// ===== 天气 PSR → mm =====
+var PSR_MM={'Low':1,'Medium Low':4,'Medium':7,'Medium High':10,'High':15};
+var WEATHER={};
+
+// ===== 回归预测引擎 =====
+function getHolidayInfo(dStr){return HOLIDAY[dStr]||{hh:0,hc:0,wh:0,wc:0,act:0};}
+function getRain(dStr){return WEATHER[dStr]!==undefined?WEATHER[dStr]:0;}
+
+function predBase(dates){
+  var r={};
+  dates.forEach(function(dStr){
+    var h=getHolidayInfo(dStr),rain=getRain(dStr);
+    var hkOut=263590+56063+(h.wh?80419:0)+(h.hh?50544:0)-515*rain;
+    var hkIn=252137+56889+(h.wh?110882:0)+(h.hh?103533:0)-513*rain;
+    var l7d=new Date(dStr);l7d.setDate(l7d.getDate()-7);
+    var l7in=(DATA[dts(l7d)]&&DATA[dts(l7d)].inbound)?DATA[dts(l7d)].inbound.mainland:0;
+    var cnOut=61377+16126+(h.wc?26565:0)+(h.hc?55577:0)-136*rain+(h.act?7842:0)+0.23*l7in;
+    var cnIn=82112+21742+(h.wc?28343:0)+(h.hc?51793:0)-131*rain+(h.act?17820:0);
+    r[dStr]={hkOut:hkOut,hkIn:hkIn,cnOut:cnOut,cnIn:cnIn};
+  });
+  return r;
+}
+
+function predCascade(dates){
+  var s1={};
+  dates.forEach(function(dStr){
+    var h=getHolidayInfo(dStr),rain=getRain(dStr);
+    s1[dStr]={hkOut:263590+56063+(h.wh?80419:0)+(h.hh?50544:0)-515*rain,cnIn:82112+21742+(h.wc?28343:0)+(h.hc?51793:0)-131*rain+(h.act?17820:0)};
+  });
+  var r={};
+  dates.forEach(function(dStr,i){
+    var h=getHolidayInfo(dStr),rain=getRain(dStr);
+    var l1=(i>=1)?s1[dates[i-1]].hkOut:(DATA[dates[i-1]]&&DATA[dates[i-1]].outbound?DATA[dates[i-1]].outbound.hk:0);
+    var l2=(i>=2)?s1[dates[i-2]].hkOut:((i>=1&&DATA[dates[i-2]]&&DATA[dates[i-2]].outbound)?DATA[dates[i-2]].outbound.hk:0);
+    var l3=(i>=3)?s1[dates[i-3]].hkOut:((i>=1&&DATA[dates[i-3]]&&DATA[dates[i-3]].outbound)?DATA[dates[i-3]].outbound.hk:0);
+    var hkIn=103619+26307+(h.wh?78159:0)+(h.hh?39277:0)-448*rain+0.34*l1+0.16*l2+0.09*l3;
+    var cl1=(i>=1)?s1[dates[i-1]].cnIn:(DATA[dates[i-1]]&&DATA[dates[i-1]].inbound?DATA[dates[i-1]].inbound.mainland:0);
+    var cl5=(i>=5)?s1[dates[i-5]].cnIn:((i>=1&&DATA[dates[i-5]]&&DATA[dates[i-5]].inbound)?DATA[dates[i-5]].inbound.mainland:0);
+    var cl7=(i>=7)?s1[dates[i-7]].cnIn:((i>=1&&DATA[dates[i-7]]&&DATA[dates[i-7]].inbound)?DATA[dates[i-7]].inbound.mainland:0);
+    var cnOut=12902+(h.hc?21405:0)+(h.wc?20571:0)-112*rain+(h.act?7781:0)+0.60*cl1+0.11*cl5+0.08*cl7;
+    r[dStr]={hkOut:s1[dStr].hkOut,hkIn:hkIn,cnOut:cnOut,cnIn:s1[dStr].cnIn};
+  });
+  return r;
+}
+
 function genPredict(){
   var today=new Date();
   var day=today.getDay(),diff=today.getDate()-day+(day===0?-6:1);
@@ -837,11 +915,88 @@ function genPredict(){
   var thisWeekPred=predictWeek('本周');
   var nextWeekPred=predictWeek('下周');
   
-  var html='<div style="text-align:center;margin:30px 0;"><h2 style="font-size:20px;font-weight:bold;color:#2c3e50;display:inline-block;white-space:nowrap;">————————— 客流预测（参考去年趋势+4周偏离） ——————————</h2></div>';
+ var html='<div style="text-align:center;margin:30px 0;"><h2 style="font-size:20px;font-weight:bold;color:#2c3e50;display:inline-block;white-space:nowrap;">————————— 客流预测（参考去年趋势+4周偏离） ——————————</h2></div>';
+
+  // 构建本周/下周日期数组
+  var thisWeekDates=[];
+  for(var i=0;i<7;i++){var d=new Date(thisWeekStart);d.setDate(thisWeekStart.getDate()+i);thisWeekDates.push(dts(d));}
+  var nextWeekDates=[];
+  for(var i=0;i<7;i++){var d=new Date(nextWeekStart);d.setDate(nextWeekStart.getDate()+i);nextWeekDates.push(dts(d));}
+
+  // 回归预测
+  var baseThis=predBase(thisWeekDates),baseNext=predBase(nextWeekDates);
+  var cascThis=predCascade(thisWeekDates),cascNext=predCascade(nextWeekDates);
+
+  var lwReal={hkOut:avg(sLastWeek.outbound.hk),hkIn:avg(sLastWeek.inbound.hk),cnOut:avg(sLastWeek.outbound.mainland),cnIn:avg(sLastWeek.inbound.mainland)};
+
+  function avgPred(predObj,field){var s=0,c=0;for(var k in predObj){s+=predObj[k][field];c++;}return c?s/c:0;}
+
+  function genRegTable(label,dates,predObj,isCascade){
+    var start=dts(new Date(dates[0])),end=dts(new Date(dates[dates.length-1]));
+    var h='<div class="section"><h3>'+label+' ('+start+' 至 '+end+') <span style="font-size:12px;color:#888;">｜R²: '+(isCascade?'A0.30/B0.61/C0.79/D0.42':'A0.30/B0.49/C0.54/D0.42')+'</span></h3>';
+    h+='<table><thead><tr><th>人群</th><th>预测出境日均(万)</th><th>出境环比</th><th>预测入境日均(万)</th><th>入境环比</th></tr></thead><tbody>';
+    var rows=[
+      {name:'整体',out:avgPred(predObj,'hkOut')+avgPred(predObj,'cnOut'),in:avgPred(predObj,'hkIn')+avgPred(predObj,'cnIn'),oprev:lwReal.hkOut+lwReal.cnOut,iprev:lwReal.hkIn+lwReal.cnIn},
+      {name:'香港居民',out:avgPred(predObj,'hkOut'),in:avgPred(predObj,'hkIn'),oprev:lwReal.hkOut,iprev:lwReal.hkIn},
+      {name:'内地旅客',out:avgPred(predObj,'cnOut'),in:avgPred(predObj,'cnIn'),oprev:lwReal.cnOut,iprev:lwReal.cnIn},
+      {name:'外国旅客',out:0,in:0,oprev:0,iprev:0}
+    ];
+    rows.forEach(function(rw){
+      var oc=rw.oprev?((rw.out-rw.oprev)/rw.oprev*100):0;
+      var ic=rw.iprev?((rw.in-rw.iprev)/rw.iprev*100):0;
+      h+='<tr><td style="text-align:left;">'+rw.name+'</td>';
+      if(rw.name==='外国旅客'){h+='<td>—</td><td>—</td><td>—</td><td>—</td>';}
+      else{h+='<td>'+fmtN(rw.out)+'</td><td class="'+clsC(oc)+'">'+fmtP(oc)+'</td><td>'+fmtN(rw.in)+'</td><td class="'+clsC(ic)+'">'+fmtP(ic)+'</td>';}
+      h+='</tr>';
+    });
+    h+='</tbody></table>';
+    h+='<p style="margin-top:6px;font-size:11px;color:#888;">'+(isCascade?'🔄 级联：A/D先算 → 滞后项级联 → B(L1/L2/L3)+C(L1/L5/L7)':'📐 基础回归：无级联，C仅L7(永真实数据)，B无滞后')+'</p></div>';
+    return h;
+  }
+
+  var html='';
+  // 方法一
+  html+='<div style="text-align:center;margin:30px 0;padding:15px;background:#f0f4ff;border-radius:8px;"><h2 style="font-size:18px;font-weight:bold;color:#2c3e50;">————————— 方法一：客流预测（参考去年趋势+4周偏离） ——————————</h2><p style="font-size:11px;color:#888;margin-top:2px;">旧方法 — 去年同期周环比 × 上周实际 + 近4周偏离修正</p></div>';
   html+=genPredTable('本周预测',thisWeekStart,thisWeekEnd,thisWeekPred);
   html+=genPredTable('下周预测',nextWeekStart,nextWeekEnd,nextWeekPred);
-  html+='<div class="section"><p style="color:#e74c3c;font-size:12px;">⚠️ 预测基于历史数据推算，仅供参考</p></div>';
-  
+
+  // 方法二
+  html+='<div style="text-align:center;margin:30px 0;padding:15px;background:#f5fff0;border-radius:8px;"><h2 style="font-size:18px;font-weight:bold;color:#1e8449;">————————— 方法二：基础回归预测 ——————————</h2><p style="font-size:11px;color:#888;margin-top:2px;">4个OLS回归公式，无滞后级联，输入：雨量+周末+假期+活动+年份</p></div>';
+  html+=genRegTable('本周预测',thisWeekDates,baseThis,false);
+  html+=genRegTable('下周预测',nextWeekDates,baseNext,false);
+
+  // 方法三
+  html+='<div style="text-align:center;margin:30px 0;padding:15px;background:#fff8f0;border-radius:8px;"><h2 style="font-size:18px;font-weight:bold;color:#e67e22;">————————— 方法三：级联回归预测（最优R²） ——————————</h2><p style="font-size:11px;color:#888;margin-top:2px;">A/D先算 → 滞后项级联 → B(0.61)+C(0.79)，R²最高</p></div>';
+  html+=genRegTable('本周预测',thisWeekDates,cascThis,true);
+  html+=genRegTable('下周预测',nextWeekDates,cascNext,true);
+
+  // 天气状态
+  var wkeys=Object.keys(WEATHER);
+  if(wkeys.length>0){
+    html+='<div class="section"><p style="font-size:12px;color:#3498db;">🌧 天气源：香港天文台9天预报（';
+    wkeys.sort().slice(0,9).forEach(function(k){html+=k+':'+WEATHER[k]+'mm ';});
+    html+='）</p></div>';
+  }else{
+    html+='<div class="section"><p style="font-size:12px;color:#e74c3c;">⚠️ 天气数据加载中，回归预测中雨量默认=1mm（无雨Low）</p></div>';
+  }
+  html+='<div class="section"><p style="color:#e74c3c;font-size:12px;">⚠️ 预测基于历史数据推算，仅供参考；级联版误差逐日累积，远日期偏差较大</p></div>';
+
+  // 异步加载天气后自动刷新
+  fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=en')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.weatherForecast){
+        var changed=false;
+        d.weatherForecast.forEach(function(f){
+          var dd=f.forecastDate.substr(0,4)+'-'+f.forecastDate.substr(4,2)+'-'+f.forecastDate.substr(6,2);
+          var mm=PSR_MM[f.PSR]||1;
+          if(WEATHER[dd]!==mm){WEATHER[dd]=mm;changed=true;}
+        });
+        if(changed){showPage('prediction');}
+      }
+    })
+    .catch(function(){});
+
   return html;
 }
 
