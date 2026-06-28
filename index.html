@@ -744,12 +744,13 @@ function predBase(dates){
   var r={};
   dates.forEach(function(dStr){
     var h=getHolidayInfo(dStr),rain=getRain(dStr);
-    var hkOut=263590+56063+(h.wh?80419:0)+(h.hh?50544:0)-515*rain;
-    var hkIn=252137+56889+(h.wh?110882:0)+(h.hh?103533:0)-513*rain;
+    var m=parseInt(dStr.substr(5,2))-1;
+    var hkOut=232593+73902+(h.wh?80028:0)+(h.hh?53839:0)-580*rain+[0,-4657,23202,33236,15762,36415,34002,53911,24060,34267,50967,73078][m];
+    var hkIn=221264+74301+(h.wh?111048:0)+(h.hh?106618:0)-631*rain+[0,3734,13350,37755,8377,30277,41914,65276,27804,32773,51465,62886][m];
     var l7d=new Date(dStr);l7d.setDate(l7d.getDate()-7);
     var l7in=(DATA[dts(l7d)]&&DATA[dts(l7d)].inbound)?DATA[dts(l7d)].inbound.mainland:0;
-    var cnOut=61377+16126+(h.wc?26565:0)+(h.hc?55577:0)-136*rain+(h.act?7842:0)+0.23*l7in;
-    var cnIn=82112+21742+(h.wc?28343:0)+(h.hc?51793:0)-131*rain+(h.act?17820:0);
+    var cnOut=83742+23159+(h.wc?31530:0)+(h.hc?57723:0)-177*rain+(h.act?12210:0)+0.04*l7in+[0,2053,-16682,-19659,-16934,-22746,8722,28028,-20863,-6446,-8607,1362][m];
+    var cnIn=93834+17343+(h.wc?30254:0)+(h.hc?40732:0)-226*rain+(h.act?18767:0)+[0,6572,-15876,-17552,-12823,-18721,15935,36410,-16269,-2241,-3798,4750][m];
     r[dStr]={hkOut:hkOut,hkIn:hkIn,cnOut:cnOut,cnIn:cnIn};
   });
   return r;
@@ -759,19 +760,21 @@ function predCascade(dates){
   var s1={};
   dates.forEach(function(dStr){
     var h=getHolidayInfo(dStr),rain=getRain(dStr);
-    s1[dStr]={hkOut:263590+56063+(h.wh?80419:0)+(h.hh?50544:0)-515*rain,cnIn:82112+21742+(h.wc?28343:0)+(h.hc?51793:0)-131*rain+(h.act?17820:0)};
+    var m=parseInt(dStr.substr(5,2))-1;
+    s1[dStr]={hkOut:232593+73902+(h.wh?80028:0)+(h.hh?53839:0)-580*rain+[0,-4657,23202,33236,15762,36415,34002,53911,24060,34267,50967,73078][m],cnIn:93834+17343+(h.wc?30254:0)+(h.hc?40732:0)-226*rain+(h.act?18767:0)+[0,6572,-15876,-17552,-12823,-18721,15935,36410,-16269,-2241,-3798,4750][m]};
   });
   var r={};
   dates.forEach(function(dStr,i){
     var h=getHolidayInfo(dStr),rain=getRain(dStr);
+    var m=parseInt(dStr.substr(5,2))-1;
     var l1=(i>=1)?s1[dates[i-1]].hkOut:(DATA[dates[i-1]]&&DATA[dates[i-1]].outbound?DATA[dates[i-1]].outbound.hk:0);
     var l2=(i>=2)?s1[dates[i-2]].hkOut:((i>=1&&DATA[dates[i-2]]&&DATA[dates[i-2]].outbound)?DATA[dates[i-2]].outbound.hk:0);
     var l3=(i>=3)?s1[dates[i-3]].hkOut:((i>=1&&DATA[dates[i-3]]&&DATA[dates[i-3]].outbound)?DATA[dates[i-3]].outbound.hk:0);
-    var hkIn=103619+26307+(h.wh?78159:0)+(h.hh?39277:0)-448*rain+0.34*l1+0.16*l2+0.09*l3;
+    var hkIn=221264+74301+(h.wh?111048:0)+(h.hh?106618:0)-631*rain+[0,3734,13350,37755,8377,30277,41914,65276,27804,32773,51465,62886][m];
     var cl1=(i>=1)?s1[dates[i-1]].cnIn:(DATA[dates[i-1]]&&DATA[dates[i-1]].inbound?DATA[dates[i-1]].inbound.mainland:0);
     var cl5=(i>=5)?s1[dates[i-5]].cnIn:((i>=1&&DATA[dates[i-5]]&&DATA[dates[i-5]].inbound)?DATA[dates[i-5]].inbound.mainland:0);
     var cl7=(i>=7)?s1[dates[i-7]].cnIn:((i>=1&&DATA[dates[i-7]]&&DATA[dates[i-7]].inbound)?DATA[dates[i-7]].inbound.mainland:0);
-    var cnOut=12902+(h.hc?21405:0)+(h.wc?20571:0)-112*rain+(h.act?7781:0)+0.60*cl1+0.11*cl5+0.08*cl7;
+    var cnOut=83742+23159+(h.wc?31530:0)+(h.hc?57723:0)-177*rain+(h.act?12210:0)+0.60*cl1+0.11*cl5+0.08*cl7;
     r[dStr]={hkOut:s1[dStr].hkOut,hkIn:hkIn,cnOut:cnOut,cnIn:s1[dStr].cnIn};
   });
   return r;
@@ -933,7 +936,7 @@ function genPredict(){
 
   function genRegTable(label,dates,predObj,isCascade){
     var start=dts(new Date(dates[0])),end=dts(new Date(dates[dates.length-1]));
-    var h='<div class="section"><h3>'+label+' ('+start+' 至 '+end+') <span style="font-size:12px;color:#888;">｜R²: '+(isCascade?'A0.30/B0.61/C0.79/D0.42':'A0.30/B0.49/C0.54/D0.42')+'</span></h3>';
+    var h='<div class="section"><h3>'+label+' ('+start+' 至 '+end+') <span style="font-size:12px;color:#888;">｜R²: '+(isCascade?'A0.36/B0.55/C0.68/D0.57':'A0.36/B0.55/C0.68/D0.57')+'</span></h3>';
     h+='<table><thead><tr><th>人群</th><th>预测出境日均(万)</th><th>出境环比</th><th>预测入境日均(万)</th><th>入境环比</th></tr></thead><tbody>';
     var rows=[
       {name:'整体',out:avgPred(predObj,'hkOut')+avgPred(predObj,'cnOut'),in:avgPred(predObj,'hkIn')+avgPred(predObj,'cnIn'),oprev:lwReal.hkOut+lwReal.cnOut,iprev:lwReal.hkIn+lwReal.cnIn},
@@ -950,7 +953,7 @@ function genPredict(){
       h+='</tr>';
     });
     h+='</tbody></table>';
-    h+='<p style="margin-top:6px;font-size:11px;color:#888;">'+(isCascade?'🔄 级联：A/D先算 → 滞后项级联 → B(L1/L2/L3)+C(L1/L5/L7)':'📐 基础回归：无级联，C仅L7(永真实数据)，B无滞后')+'</p></div>';
+    h+='<p style="margin-top:6px;font-size:11px;color:#888;">'+(isCascade?'🔄 级联：A/D先算 → C用L1/L5/L7滞后，全部含月份系数':'📐 基础回归：含12月系数，C仅L7(永真)')+'</p></div>';
     return h;
   }
 
@@ -961,12 +964,12 @@ function genPredict(){
   html+=genPredTable('下周预测',nextWeekStart,nextWeekEnd,nextWeekPred);
 
   // 方法二
-  html+='<div style="text-align:center;margin:30px 0;padding:15px;background:#f5fff0;border-radius:8px;"><h2 style="font-size:18px;font-weight:bold;color:#1e8449;">————————— 方法二：基础回归预测 ——————————</h2><p style="font-size:11px;color:#888;margin-top:2px;">4个OLS回归公式，无滞后级联，输入：雨量+周末+假期+活动+年份</p></div>';
+  html+='<div style="text-align:center;margin:30px 0;padding:15px;background:#f5fff0;border-radius:8px;"><h2 style="font-size:18px;font-weight:bold;color:#1e8449;">————————— 方法二：基础回归预测 ——————————</h2><p style="font-size:11px;color:#888;margin-top:2px;">4个OLS+月份系数，输入：雨量+周末+假期+活动+年份+月份</p></div>';
   html+=genRegTable('本周预测',thisWeekDates,baseThis,false);
   html+=genRegTable('下周预测',nextWeekDates,baseNext,false);
 
   // 方法三
-  html+='<div style="text-align:center;margin:30px 0;padding:15px;background:#fff8f0;border-radius:8px;"><h2 style="font-size:18px;font-weight:bold;color:#e67e22;">————————— 方法三：级联回归预测（最优R²） ——————————</h2><p style="font-size:11px;color:#888;margin-top:2px;">A/D先算 → 滞后项级联 → B(0.61)+C(0.79)，R²最高</p></div>';
+  html+='<div style="text-align:center;margin:30px 0;padding:15px;background:#fff8f0;border-radius:8px;"><h2 style="font-size:18px;font-weight:bold;color:#e67e22;">————————— 方法三：级联回归预测 ——————————</h2><p style="font-size:11px;color:#888;margin-top:2px;">A/D先算 → C用L1/L5/L7滞后级联，全部含月份系数</p></div>';
   html+=genRegTable('本周预测',thisWeekDates,cascThis,true);
   html+=genRegTable('下周预测',nextWeekDates,cascNext,true);
 
