@@ -398,7 +398,7 @@ function genReport(){
   // 图表和小抄
   h+='<div class="section"><h3>年度对比趋势图</h3><div class="charts-row"><div class="chart-box"><h4>入境情况</h4><div id="ci" class="chart"></div></div></div><div class="charts-row"><div class="chart-box"><h4>出境情况</h4><div id="co" class="chart"></div></div></div></div>';
   h+='<div class="section"><h3>细节趋势图（近6周）</h3><div class="charts-row"><div class="chart-box"><h4>入境细节</h4><div id="cid" class="chart"></div></div></div><div class="charts-row"><div class="chart-box"><h4>出境细节</h4><div id="cod" class="chart"></div></div></div></div>';
-  h+='<div class="section"><h3>细节趋势图（近4周·精简版）</h3><div class="charts-row"><div class="chart-box"><h4>入境细节（内地+总数）</h4><div id="cid2" class="chart" style="height:600px"></div></div></div><div class="charts-row"><div class="chart-box"><h4>出境细节（港人+总数）</h4><div id="cod2" class="chart" style="height:600px"></div></div></div></div>';
+  h+='<div class="section"><h3>细节趋势图（精简版）</h3><div class="charts-row"><div class="chart-box" style="height:650px"><h4>入境细节（内地+总数）</h4><div id="cid2" class="chart" style="height:600px"></div></div></div><div class="charts-row"><div class="chart-box" style="height:650px"><h4>出境细节（港人+总数）</h4><div id="cod2" class="chart" style="height:600px"></div></div></div></div>';
   
   var ia=avg(s0.inbound.total),oa=avg(s0.outbound.total),ta=ia+oa;
   var ic=chg(ia,avg(s1.inbound.total)),oc=chg(oa,avg(s1.outbound.total));
@@ -514,7 +514,7 @@ function drawCharts(){
   
   var cid2 = echarts.init(document.getElementById('cid2'));
   cid2.setOption({
-    title: { text: '入境细节趋势（近4周）', left: 'center', textStyle: { fontSize: 14 } },
+    title: { text: '入境细节趋势（精简版）', left: 'center', textStyle: { fontSize: 14 } },
     tooltip: { trigger: 'axis' },
     legend: { bottom: 5, data: ['内地旅客(今年)', '内地旅客(去年)', '总人数(今年)', '总人数(去年)'] },
     grid: { left: '3%', right: '4%', bottom: '15%', top: '15%', containLabel: true },
@@ -530,7 +530,7 @@ function drawCharts(){
   
   var cod2 = echarts.init(document.getElementById('cod2'));
   cod2.setOption({
-    title: { text: '出境细节趋势（近4周）', left: 'center', textStyle: { fontSize: 14 } },
+    title: { text: '出境细节趋势（精简版）', left: 'center', textStyle: { fontSize: 14 } },
     tooltip: { trigger: 'axis' },
     legend: { bottom: 5, data: ['港人(今年)', '港人(去年)', '总人数(今年)', '总人数(去年)'] },
     grid: { left: '3%', right: '4%', bottom: '15%', top: '15%', containLabel: true },
