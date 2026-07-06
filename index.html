@@ -492,6 +492,59 @@ function drawCharts(){
     {name:'总人数(今年)',type:'line',data:detailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.total:0)/10000);}),smooth:false,lineStyle:{color:'#333333',width:2},itemStyle:{color:'#333333'},showSymbol:false},
     {name:'总人数(去年)',type:'line',data:lyDetailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.total:0)/10000);}),smooth:false,lineStyle:{color:'#333333',width:2,type:'dashed'},itemStyle:{color:'#333333'},showSymbol:false}
   ]});
+
+  // ========== 精简版细节趋势图（近4周）==========
+  var today2 = new Date();
+  var detailStart2 = new Date(today2);
+  detailStart2.setDate(detailStart2.getDate() - 7);
+  var detailEnd2 = new Date(today2);
+  detailEnd2.setDate(detailEnd2.getDate() + 21);
+  
+  var detailDates2 = [];
+  var d2 = new Date(detailStart2);
+  while (d2 <= detailEnd2) {
+    detailDates2.push(dts(d2));
+    d2.setDate(d2.getDate() + 1);
+  }
+  var lyDetailDates2 = detailDates2.map(function(d) {
+    var dt = new Date(d);
+    dt.setFullYear(dt.getFullYear() - 1);
+    return dts(dt);
+  });
+  
+  var cid2 = echarts.init(document.getElementById('cid2'));
+  cid2.setOption({
+    title: { text: '入境细节趋势（近4周）', left: 'center', textStyle: { fontSize: 14 } },
+    tooltip: { trigger: 'axis' },
+    legend: { bottom: 5, data: ['内地旅客(今年)', '内地旅客(去年)', '总人数(今年)', '总人数(去年)'] },
+    grid: { left: '3%', right: '4%', bottom: '15%', top: '15%', containLabel: true },
+    xAxis: { type: 'category', data: detailDates2.map(fmtD), axisLabel: { interval: 0, rotate: 45, fontSize: 10 } },
+    yAxis: { type: 'value', name: '万人次', max: 80, interval: 10 },
+    series: [
+      { name: '内地旅客(今年)', type: 'line', data: detailDates2.map(function(d) { return fmt2((DATA[d] && DATA[d].inbound ? DATA[d].inbound.mainland : 0) / 10000); }), smooth: false, lineStyle: { color: '#df8f44', width: 2 }, itemStyle: { color: '#df8f44' }, showSymbol: false },
+      { name: '内地旅客(去年)', type: 'line', data: lyDetailDates2.map(function(d) { return fmt2((DATA[d] && DATA[d].inbound ? DATA[d].inbound.mainland : 0) / 10000); }), smooth: false, lineStyle: { color: '#df8f44', width: 2, type: 'dashed' }, itemStyle: { color: '#df8f44' }, showSymbol: false },
+      { name: '总人数(今年)', type: 'line', data: detailDates2.map(function(d) { return fmt2((DATA[d] && DATA[d].inbound ? DATA[d].inbound.total : 0) / 10000); }), smooth: false, lineStyle: { color: '#333333', width: 2 }, itemStyle: { color: '#333333' }, showSymbol: false },
+      { name: '总人数(去年)', type: 'line', data: lyDetailDates2.map(function(d) { return fmt2((DATA[d] && DATA[d].inbound ? DATA[d].inbound.total : 0) / 10000); }), smooth: false, lineStyle: { color: '#333333', width: 2, type: 'dashed' }, itemStyle: { color: '#333333' }, showSymbol: false }
+    ]
+  });
+  
+  var cod2 = echarts.init(document.getElementById('cod2'));
+  cod2.setOption({
+    title: { text: '出境细节趋势（近4周）', left: 'center', textStyle: { fontSize: 14 } },
+    tooltip: { trigger: 'axis' },
+    legend: { bottom: 5, data: ['港人(今年)', '港人(去年)', '总人数(今年)', '总人数(去年)'] },
+    grid: { left: '3%', right: '4%', bottom: '15%', top: '15%', containLabel: true },
+    xAxis: { type: 'category', data: detailDates2.map(fmtD), axisLabel: { interval: 0, rotate: 45, fontSize: 10 } },
+    yAxis: { type: 'value', name: '万人次', max: 80, interval: 10 },
+    series: [
+      { name: '港人(今年)', type: 'line', data: detailDates2.map(function(d) { return fmt2((DATA[d] && DATA[d].outbound ? DATA[d].outbound.hk : 0) / 10000); }), smooth: false, lineStyle: { color: '#00a1d5', width: 2 }, itemStyle: { color: '#00a1d5' }, showSymbol: false },
+      { name: '港人(去年)', type: 'line', data: lyDetailDates2.map(function(d) { return fmt2((DATA[d] && DATA[d].outbound ? DATA[d].outbound.hk : 0) / 10000); }), smooth: false, lineStyle: { color: '#00a1d5', width: 2, type: 'dashed' }, itemStyle: { color: '#00a1d5' }, showSymbol: false },
+      { name: '总人数(今年)', type: 'line', data: detailDates2.map(function(d) { return fmt2((DATA[d] && DATA[d].outbound ? DATA[d].outbound.total : 0) / 10000); }), smooth: false, lineStyle: { color: '#333333', width: 2 }, itemStyle: { color: '#333333' }, showSymbol: false },
+      { name: '总人数(去年)', type: 'line', data: lyDetailDates2.map(function(d) { return fmt2((DATA[d] && DATA[d].outbound ? DATA[d].outbound.total : 0) / 10000); }), smooth: false, lineStyle: { color: '#333333', width: 2, type: 'dashed' }, itemStyle: { color: '#333333' }, showSymbol: false }
+    ]
+  });
+  // ========== 精简版结束 ==========
+
 }
 
 
