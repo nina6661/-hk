@@ -2,8 +2,11 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>香港出入境数据统计系统</title>
+<title>香港出入境数据统计和预测看板</title>
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -46,8 +49,7 @@ footer{margin-top:30px;padding:20px;text-align:center;color:#7f8c8d;font-size:14
 <body>
 <div class="container">
 <header>
-<h1 class="title-main">香港出入境数据统计系统</h1><p class="title-sub">数据来源：香港入境事务处 | 数据范围：<span id="dataRange">2021-01-01 至 2026-05-20</span></p>
-<p>数据来源：香港入境事务处 | 数据范围：<span id="dataRange">2021-01-01 至 2026-05-20</span></p>
+<h1 class="title-main">香港出入境数据统计和预测看板</h1><p class="title-sub">数据来源：香港入境事务处 | 数据范围：<span id="dataRange">2021-01-01 至 2026-09-02</span></p>
 <nav>
 <button class="active" onclick="showPage('current')">最新周报</button>
 <button onclick="showPage('history')">历史查询</button>
@@ -82,7 +84,7 @@ function tryRender() {
 }
 
 // 先尝试加载一次，失败则用轮询
-fetch('data.json')
+fetch('data.json?_v=2&_t='+Date.now(),{cache:'no-store'})
   .then(function(r) { return r.json(); })
   .then(function(d) {
     DATA = d;
@@ -290,10 +292,11 @@ function genReport(){
       h+='<td class="'+clsC(c)+'">'+fmtP(c)+'</td>';
       
       dates0.forEach(function(d,i){
+        var hasData=!!DATA[d];
         var v=s0[dir][cat][i]||0;
         var pv=s1[dir][cat][i]||0;
         var dc=chg(v,pv);
-        h+='<td>'+fmtN(v)+'<span class="sub-text '+clsC(dc)+'">'+fmtP(dc)+'</span></td>';
+        h+='<td>'+(hasData?fmtN(v):'-')+(hasData?'<span class="sub-text '+clsC(dc)+'">'+fmtP(dc)+'</span>':'')+'</td>';
       });
       
       h+='<td>'+fmtN(a0)+'</td>';
@@ -315,10 +318,11 @@ function genReport(){
     h+='<td class="'+clsC(tc)+'">'+fmtP(tc)+'</td>';
     
     dates0.forEach(function(d,i){
+      var hasData=!!DATA[d];
       var v=s0[dir].total[i]||0;
       var pv=s1[dir].total[i]||0;
       var dc=chg(v,pv);
-      h+='<td>'+fmtN(v)+'<span class="sub-text '+clsC(dc)+'">'+fmtP(dc)+'</span></td>';
+      h+='<td>'+(hasData?fmtN(v):'-')+(hasData?'<span class="sub-text '+clsC(dc)+'">'+fmtP(dc)+'</span>':'')+'</td>';
     });
     
     h+='<td>'+fmtN(ta0)+'</td>';
@@ -363,7 +367,8 @@ function genReport(){
       h+='<td class="'+clsC(lc)+'">'+fmtP(lc)+'</td>';
       
       lyDates.forEach(function(d,i){
-        h+='<td>'+fmtN(ls[dir][cat][i]||0)+'</td>';
+        var hasData=!!DATA[d];
+        h+='<td>'+(hasData?fmtN(ls[dir][cat][i]||0):'-')+'</td>';
       });
       
       h+='<td>'+fmtN(la)+'</td>';
@@ -383,7 +388,8 @@ function genReport(){
     h+='<td class="'+clsC(ltc)+'"><strong>'+fmtP(ltc)+'</strong></td>';
     
     lyDates.forEach(function(d,i){
-      h+='<td><strong>'+fmtN(ls[dir].total[i]||0)+'</strong></td>';
+      var hasData=!!DATA[d];
+      h+='<td><strong>'+(hasData?fmtN(ls[dir].total[i]||0):'-')+'</strong></td>';
     });
     
     h+='<td><strong>'+fmtN(lta)+'</strong></td>';
@@ -397,7 +403,7 @@ function genReport(){
   
   // 图表和小抄
   h+='<div class="section"><h3>年度对比趋势图</h3><div class="charts-row"><div class="chart-box"><h4>入境情况</h4><div id="ci" class="chart"></div></div></div><div class="charts-row"><div class="chart-box"><h4>出境情况</h4><div id="co" class="chart"></div></div></div></div>';
-  h+='<div class="section"><h3>细节趋势图（近6周）</h3><div class="charts-row"><div class="chart-box"><h4>入境细节</h4><div id="cid" class="chart"></div></div></div><div class="charts-row"><div class="chart-box"><h4>出境细节</h4><div id="cod" class="chart"></div></div></div></div>';
+  // 近6周图已删除
   h+='<div class="section"><h3>细节趋势图（精简版）</h3><div class="charts-row"><div class="chart-box" style="height:650px"><h4>入境细节（内地+总数）</h4><div id="cid2" class="chart" style="height:600px"></div></div></div><div class="charts-row"><div class="chart-box" style="height:650px"><h4>出境细节（港人+总数）</h4><div id="cod2" class="chart" style="height:600px"></div></div></div></div>';
   
   var ia=avg(s0.inbound.total),oa=avg(s0.outbound.total),ta=ia+oa;
@@ -413,34 +419,50 @@ function genReport(){
   return h;
 }
 
+function lySameDay(cyDate){
+  var cd=new Date(cyDate+'T00:00:00'),dow=cd.getDay();
+  for(var off=0;off<=7;off++){
+    for(var s=off;s>=-off;s--){
+      var ld=new Date(cd);ld.setDate(cd.getDate()+s);ld.setFullYear(2025);
+      var lk=ld.getFullYear()+'-'+String(ld.getMonth()+1).padStart(2,'0')+'-'+String(ld.getDate()).padStart(2,'0');
+      if(window._lyMap && window._lyMap[lk] && ld.getDay()===dow)return lk;
+    }
+  }
+  return null;
+}
+
 function drawCharts(){
   var al=Object.keys(DATA).sort();
   var ly=al.filter(function(d){return d.startsWith('2025')});
   var cy=al.filter(function(d){return d.startsWith('2026')});
+  window._cy=cy;
+  window._lyMap={};ly.forEach(function(d){window._lyMap[d]=1;});
+
   
   // 格式化函数 - 保留两位小数
   function fmt2(n){return Math.round(n*100)/100;}
   
-  // 年度对比图 - 入境（直线折线，统一颜色）
+  // 年度对比图 - 入境（直线折线，统一颜色，x轴按今年对齐去年同日）
   var ci=echarts.init(document.getElementById('ci'));
-  ci.setOption({title:{text:'入境情况年度对比',left:'center',textStyle:{fontSize:14}},tooltip:{trigger:'axis'},legend:{bottom:5,data:['港人(今年)','港人(去年)','内地旅客(今年)','内地旅客(去年)','总人数(今年)','总人数(去年)']},grid:{left:'3%',right:'4%',bottom:'15%',top:'15%',containLabel:true},xAxis:{type:'category',data:ly.map(fmtD),axisLabel:{interval:29}},yAxis:{type:'value',name:'万人次',max:80,interval:10},series:[
+
+  ci.setOption({title:{text:'入境情况年度对比',left:'center',textStyle:{fontSize:14}},tooltip:{trigger:'axis',formatter:function(params){var html='<strong>'+params[0].axisValue+'</strong><br/>';params.forEach(function(p){var val=p.value!==null?p.value:'-';html+=p.marker+p.seriesName+': '+val;if(p.seriesName.indexOf('去年')>=0){var cyDate=window._cy[params[0].dataIndex];var lyDate=lySameDay(cyDate);if(lyDate)html+=' ('+lyDate+')';}html+='<br/>';});return html;}},legend:{bottom:5,data:['港人(今年)','港人(去年)','内地旅客(今年)','内地旅客(去年)','总人数(今年)','总人数(去年)']},grid:{left:'3%',right:'4%',bottom:'15%',top:'15%',containLabel:true},xAxis:{type:'category',data:cy.map(fmtD),axisLabel:{interval:29}},yAxis:{type:'value',name:'万人次'},series:[
     {name:'港人(今年)',type:'line',data:cy.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.hk:0)/10000);}),smooth:false,lineStyle:{color:'#00a1d5',width:2},itemStyle:{color:'#00a1d5'},showSymbol:false},
-    {name:'港人(去年)',type:'line',data:ly.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.hk:0)/10000);}),smooth:false,lineStyle:{color:'#00a1d5',width:2,type:'dashed'},itemStyle:{color:'#00a1d5'},showSymbol:false},
+    {name:'港人(去年)',type:'line',data:cy.map(function(d){var ld=lySameDay(d);return ld&&DATA[ld]&&DATA[ld].inbound?fmt2(DATA[ld].inbound.hk/10000):null;}),smooth:false,lineStyle:{color:'#00a1d5',width:2,type:'dashed'},itemStyle:{color:'#00a1d5'},showSymbol:false,connectNulls:true},
     {name:'内地旅客(今年)',type:'line',data:cy.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.mainland:0)/10000);}),smooth:false,lineStyle:{color:'#df8f44',width:2},itemStyle:{color:'#df8f44'},showSymbol:false},
-    {name:'内地旅客(去年)',type:'line',data:ly.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.mainland:0)/10000);}),smooth:false,lineStyle:{color:'#df8f44',width:2,type:'dashed'},itemStyle:{color:'#df8f44'},showSymbol:false},
+    {name:'内地旅客(去年)',type:'line',data:cy.map(function(d){var ld=lySameDay(d);return ld&&DATA[ld]&&DATA[ld].inbound?fmt2(DATA[ld].inbound.mainland/10000):null;}),smooth:false,lineStyle:{color:'#df8f44',width:2,type:'dashed'},itemStyle:{color:'#df8f44'},showSymbol:false,connectNulls:true},
     {name:'总人数(今年)',type:'line',data:cy.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.total:0)/10000);}),smooth:false,lineStyle:{color:'#333333',width:2},itemStyle:{color:'#333333'},showSymbol:false},
-    {name:'总人数(去年)',type:'line',data:ly.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.total:0)/10000);}),smooth:false,lineStyle:{color:'#333333',width:2,type:'dashed'},itemStyle:{color:'#333333'},showSymbol:false}
+    {name:'总人数(去年)',type:'line',data:cy.map(function(d){var ld=lySameDay(d);return ld&&DATA[ld]&&DATA[ld].inbound?fmt2(DATA[ld].inbound.total/10000):null;}),smooth:false,lineStyle:{color:'#333333',width:2,type:'dashed'},itemStyle:{color:'#333333'},showSymbol:false,connectNulls:true}
   ]});
   
-  // 年度对比图 - 出境（直线折线，统一颜色）
+  // 年度对比图 - 出境（直线折线，统一颜色，x轴按今年对齐去年同日）
   var co=echarts.init(document.getElementById('co'));
-  co.setOption({title:{text:'出境情况年度对比',left:'center',textStyle:{fontSize:14}},tooltip:{trigger:'axis'},legend:{bottom:5,data:['港人(今年)','港人(去年)','内地旅客(今年)','内地旅客(去年)','总人数(今年)','总人数(去年)']},grid:{left:'3%',right:'4%',bottom:'15%',top:'15%',containLabel:true},xAxis:{type:'category',data:ly.map(fmtD),axisLabel:{interval:29}},yAxis:{type:'value',name:'万人次',max:80,interval:10},series:[
+  co.setOption({title:{text:'出境情况年度对比',left:'center',textStyle:{fontSize:14}},tooltip:{trigger:'axis',formatter:function(params){var html='<strong>'+params[0].axisValue+'</strong><br/>';params.forEach(function(p){var val=p.value!==null?p.value:'-';html+=p.marker+p.seriesName+': '+val;if(p.seriesName.indexOf('去年')>=0){var cyDate=window._cy[params[0].dataIndex];var lyDate=lySameDay(cyDate);if(lyDate)html+=' ('+lyDate+')';}html+='<br/>';});return html;}},legend:{bottom:5,data:['港人(今年)','港人(去年)','内地旅客(今年)','内地旅客(去年)','总人数(今年)','总人数(去年)']},grid:{left:'3%',right:'4%',bottom:'15%',top:'15%',containLabel:true},xAxis:{type:'category',data:cy.map(fmtD),axisLabel:{interval:29}},yAxis:{type:'value',name:'万人次'},series:[
     {name:'港人(今年)',type:'line',data:cy.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.hk:0)/10000);}),smooth:false,lineStyle:{color:'#00a1d5',width:2},itemStyle:{color:'#00a1d5'},showSymbol:false},
-    {name:'港人(去年)',type:'line',data:ly.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.hk:0)/10000);}),smooth:false,lineStyle:{color:'#00a1d5',width:2,type:'dashed'},itemStyle:{color:'#00a1d5'},showSymbol:false},
+    {name:'港人(去年)',type:'line',data:cy.map(function(d){var ld=lySameDay(d);return ld&&DATA[ld]&&DATA[ld].outbound?fmt2(DATA[ld].outbound.hk/10000):null;}),smooth:false,lineStyle:{color:'#00a1d5',width:2,type:'dashed'},itemStyle:{color:'#00a1d5'},showSymbol:false,connectNulls:true},
     {name:'内地旅客(今年)',type:'line',data:cy.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.mainland:0)/10000);}),smooth:false,lineStyle:{color:'#df8f44',width:2},itemStyle:{color:'#df8f44'},showSymbol:false},
-    {name:'内地旅客(去年)',type:'line',data:ly.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.mainland:0)/10000);}),smooth:false,lineStyle:{color:'#df8f44',width:2,type:'dashed'},itemStyle:{color:'#df8f44'},showSymbol:false},
+    {name:'内地旅客(去年)',type:'line',data:cy.map(function(d){var ld=lySameDay(d);return ld&&DATA[ld]&&DATA[ld].outbound?fmt2(DATA[ld].outbound.mainland/10000):null;}),smooth:false,lineStyle:{color:'#df8f44',width:2,type:'dashed'},itemStyle:{color:'#df8f44'},showSymbol:false,connectNulls:true},
     {name:'总人数(今年)',type:'line',data:cy.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.total:0)/10000);}),smooth:false,lineStyle:{color:'#333333',width:2},itemStyle:{color:'#333333'},showSymbol:false},
-    {name:'总人数(去年)',type:'line',data:ly.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.total:0)/10000);}),smooth:false,lineStyle:{color:'#333333',width:2,type:'dashed'},itemStyle:{color:'#333333'},showSymbol:false}
+    {name:'总人数(去年)',type:'line',data:cy.map(function(d){var ld=lySameDay(d);return ld&&DATA[ld]&&DATA[ld].outbound?fmt2(DATA[ld].outbound.total/10000):null;}),smooth:false,lineStyle:{color:'#333333',width:2,type:'dashed'},itemStyle:{color:'#333333'},showSymbol:false,connectNulls:true}
   ]});
   
   // 细节趋势图 - 横轴：当前周往前2周到往后3周（共6周）
@@ -456,49 +478,28 @@ function drawCharts(){
   var detailEnd=new Date(wk.end);
   detailEnd.setDate(detailEnd.getDate()+21);
   
+  // 截断到数据最新日期，避免今年未来日期强制为0导致折线错乱
+  var maxDataDate=al[al.length-1];
+  var maxDt=new Date(maxDataDate+'T23:59:59');
+  if(detailEnd>maxDt) detailEnd=maxDt;
+  
   // 生成日期范围
   var detailDates=[];
   var d=new Date(detailStart);
   while(d<=detailEnd){detailDates.push(dts(d));d.setDate(d.getDate()+1);}
   
-  // 计算去年同期日期（往前推365天，考虑闰年用ISO周对齐更精确）
-  var lyDetailDates=detailDates.map(function(d){var dt=new Date(d);dt.setFullYear(dt.getFullYear()-1);return dts(dt)});
+  // 计算去年同期日期（用 lySameDay 做周几对齐，确保周一对周一、周日对周日）
+  var lyDetailDates=detailDates.map(function(d){return lySameDay(d)});
   
   // 格式化函数 - 保留两位小数
   function fmt2(n){return Math.round(n*100)/100;}
   
-  // 细节图 - 入境（含去年同期对比+总人数线）
-  var cid=echarts.init(document.getElementById('cid'));
-  cid.setOption({title:{text:'入境细节趋势（近6周）',left:'center',textStyle:{fontSize:14}},tooltip:{trigger:'axis'},legend:{bottom:5,data:['港人(今年)','港人(去年)','内地旅客(今年)','内地旅客(去年)','外国旅客(今年)','外国旅客(去年)','总人数(今年)','总人数(去年)']},grid:{left:'3%',right:'4%',bottom:'15%',top:'15%',containLabel:true},xAxis:{type:'category',data:detailDates.map(fmtD),axisLabel:{interval:0,rotate:45,fontSize:10}},yAxis:{type:'value',name:'万人次',max:80,interval:10},series:[
-    {name:'港人(今年)',type:'line',data:detailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.hk:0)/10000);}),smooth:false,lineStyle:{color:'#00a1d5',width:2},itemStyle:{color:'#00a1d5'},showSymbol:false},
-    {name:'港人(去年)',type:'line',data:lyDetailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.hk:0)/10000);}),smooth:false,lineStyle:{color:'#00a1d5',width:2,type:'dashed'},itemStyle:{color:'#00a1d5'},showSymbol:false},
-    {name:'内地旅客(今年)',type:'line',data:detailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.mainland:0)/10000);}),smooth:false,lineStyle:{color:'#df8f44',width:2},itemStyle:{color:'#df8f44'},showSymbol:false},
-    {name:'内地旅客(去年)',type:'line',data:lyDetailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.mainland:0)/10000);}),smooth:false,lineStyle:{color:'#df8f44',width:2,type:'dashed'},itemStyle:{color:'#df8f44'},showSymbol:false},
-    {name:'外国旅客(今年)',type:'line',data:detailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.other:0)/10000);}),smooth:false,lineStyle:{color:'#79af97',width:2},itemStyle:{color:'#79af97'},showSymbol:false},
-    {name:'外国旅客(去年)',type:'line',data:lyDetailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.other:0)/10000);}),smooth:false,lineStyle:{color:'#79af97',width:2,type:'dashed'},itemStyle:{color:'#79af97'},showSymbol:false},
-    {name:'总人数(今年)',type:'line',data:detailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.total:0)/10000);}),smooth:false,lineStyle:{color:'#333333',width:2},itemStyle:{color:'#333333'},showSymbol:false},
-    {name:'总人数(去年)',type:'line',data:lyDetailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.total:0)/10000);}),smooth:false,lineStyle:{color:'#333333',width:2,type:'dashed'},itemStyle:{color:'#333333'},showSymbol:false}
-  ]});
-  
-  // 细节图 - 出境（含去年同期对比+总人数线）
-  var cod=echarts.init(document.getElementById('cod'));
-  cod.setOption({title:{text:'出境细节趋势（近6周）',left:'center',textStyle:{fontSize:14}},tooltip:{trigger:'axis'},legend:{bottom:5,data:['港人(今年)','港人(去年)','内地旅客(今年)','内地旅客(去年)','外国旅客(今年)','外国旅客(去年)','总人数(今年)','总人数(去年)']},grid:{left:'3%',right:'4%',bottom:'15%',top:'15%',containLabel:true},xAxis:{type:'category',data:detailDates.map(fmtD),axisLabel:{interval:0,rotate:45,fontSize:10}},yAxis:{type:'value',name:'万人次',max:80,interval:10},series:[
-    {name:'港人(今年)',type:'line',data:detailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.hk:0)/10000);}),smooth:false,lineStyle:{color:'#00a1d5',width:2},itemStyle:{color:'#00a1d5'},showSymbol:false},
-    {name:'港人(去年)',type:'line',data:lyDetailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.hk:0)/10000);}),smooth:false,lineStyle:{color:'#00a1d5',width:2,type:'dashed'},itemStyle:{color:'#00a1d5'},showSymbol:false},
-    {name:'内地旅客(今年)',type:'line',data:detailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.mainland:0)/10000);}),smooth:false,lineStyle:{color:'#df8f44',width:2},itemStyle:{color:'#df8f44'},showSymbol:false},
-    {name:'内地旅客(去年)',type:'line',data:lyDetailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.mainland:0)/10000);}),smooth:false,lineStyle:{color:'#df8f44',width:2,type:'dashed'},itemStyle:{color:'#df8f44'},showSymbol:false},
-    {name:'外国旅客(今年)',type:'line',data:detailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.other:0)/10000);}),smooth:false,lineStyle:{color:'#79af97',width:2},itemStyle:{color:'#79af97'},showSymbol:false},
-    {name:'外国旅客(去年)',type:'line',data:lyDetailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.other:0)/10000);}),smooth:false,lineStyle:{color:'#79af97',width:2,type:'dashed'},itemStyle:{color:'#79af97'},showSymbol:false},
-    {name:'总人数(今年)',type:'line',data:detailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.total:0)/10000);}),smooth:false,lineStyle:{color:'#333333',width:2},itemStyle:{color:'#333333'},showSymbol:false},
-    {name:'总人数(去年)',type:'line',data:lyDetailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.total:0)/10000);}),smooth:false,lineStyle:{color:'#333333',width:2,type:'dashed'},itemStyle:{color:'#333333'},showSymbol:false}
-  ]});
-
   // ========== 精简版细节趋势图（近4周）==========
   var today2 = new Date();
   var detailStart2 = new Date(today2);
   detailStart2.setDate(detailStart2.getDate() - 7);
   var detailEnd2 = new Date(today2);
-  detailEnd2.setDate(detailEnd2.getDate() + 14);
+  detailEnd2.setDate(detailEnd2.getDate() + 13);
   
   var detailDates2 = [];
   var d2 = new Date(detailStart2);
@@ -507,39 +508,39 @@ function drawCharts(){
     d2.setDate(d2.getDate() + 1);
   }
   var lyDetailDates2 = detailDates2.map(function(d) {
-    var dt = new Date(d);
-    dt.setFullYear(dt.getFullYear() - 1);
-    return dts(dt);
+    return lySameDay(d);
   });
-  
+  window._lyDetailDates2 = lyDetailDates2;
+  window._cyDetailDates2 = detailDates2;
+
   var cid2 = echarts.init(document.getElementById('cid2'));
   cid2.setOption({
     title: { text: '入境细节趋势（精简版）', left: 'center', textStyle: { fontSize: 14 } },
-    tooltip: { trigger: 'axis' },
+    tooltip: { trigger: 'axis', formatter: function(params) { var html='<strong>'+params[0].axisValue+'</strong><br/>'; params.forEach(function(p){ var val=p.value!==null?p.value:'-'; html+=p.marker+p.seriesName+': '+val; if(p.seriesName.indexOf('去年')>=0&&(window._lyDetailDates2 ? window._lyDetailDates2[p.dataIndex] : null)){html+=' ('+(window._lyDetailDates2 ? window._lyDetailDates2[p.dataIndex] : null)+')';} else if(p.seriesName.indexOf('今年')>=0){html+=' ('+(window._cyDetailDates2 ? window._cyDetailDates2[p.dataIndex] : null)+')';} html+='<br/>'; }); return html; } },
     legend: { bottom: 5, data: ['内地旅客(今年)', '内地旅客(去年)', '总人数(今年)', '总人数(去年)'] },
     grid: { left: '3%', right: '4%', bottom: '15%', top: '15%', containLabel: true },
-    xAxis: { type: 'category', data: detailDates2.map(fmtD), axisLabel: { interval: 0, rotate: 45, fontSize: 10 } },
-    yAxis: { type: 'value', name: '万人次', max: 80, interval: 10 },
+    xAxis: { type: 'category', data: detailDates2.map(function(d,i){return (i===0?'2026 ':'')+fmtD(d);}), axisLabel: { interval: 0, rotate: 45, fontSize: 10 } },
+    yAxis: { type: 'value', name: '万人次' },
     series: [
-      { name: '内地旅客(今年)', type: 'line', data: detailDates2.map(function(d) { return fmt2((DATA[d] && DATA[d].inbound ? DATA[d].inbound.mainland : 0) / 10000); }), smooth: false, lineStyle: { color: '#df8f44', width: 2 }, itemStyle: { color: '#df8f44' }, showSymbol: false },
-      { name: '内地旅客(去年)', type: 'line', data: lyDetailDates2.map(function(d) { return fmt2((DATA[d] && DATA[d].inbound ? DATA[d].inbound.mainland : 0) / 10000); }), smooth: false, lineStyle: { color: '#df8f44', width: 2, type: 'dashed' }, itemStyle: { color: '#df8f44' }, showSymbol: false },
-      { name: '总人数(今年)', type: 'line', data: detailDates2.map(function(d) { return fmt2((DATA[d] && DATA[d].inbound ? DATA[d].inbound.total : 0) / 10000); }), smooth: false, lineStyle: { color: '#333333', width: 2 }, itemStyle: { color: '#333333' }, showSymbol: false },
+      { name: '内地旅客(今年)', type: 'line', data: detailDates2.map(function(d) { return DATA[d] && DATA[d].inbound ? fmt2(DATA[d].inbound.mainland / 10000) : null; }), smooth: false, lineStyle: { color: '#df8f44', width: 2 }, itemStyle: { color: '#df8f44' }, showSymbol: false, connectNulls: true },
+      { name: '内地旅客(去年)', type: 'line', data: lyDetailDates2.map(function(d) { return d && DATA[d] && DATA[d].inbound ? fmt2(DATA[d].inbound.mainland / 10000) : null; }), smooth: false, lineStyle: { color: '#df8f44', width: 2, type: 'dashed' }, itemStyle: { color: '#df8f44' }, showSymbol: false, connectNulls: true },
+      { name: '总人数(今年)', type: 'line', data: detailDates2.map(function(d) { return DATA[d] && DATA[d].inbound ? fmt2(DATA[d].inbound.total / 10000) : null; }), smooth: false, lineStyle: { color: '#333333', width: 2 }, itemStyle: { color: '#333333' }, showSymbol: false, connectNulls: true },
       { name: '总人数(去年)', type: 'line', data: lyDetailDates2.map(function(d) { return fmt2((DATA[d] && DATA[d].inbound ? DATA[d].inbound.total : 0) / 10000); }), smooth: false, lineStyle: { color: '#333333', width: 2, type: 'dashed' }, itemStyle: { color: '#333333' }, showSymbol: false }
     ]
   });
-  
+
   var cod2 = echarts.init(document.getElementById('cod2'));
   cod2.setOption({
     title: { text: '出境细节趋势（精简版）', left: 'center', textStyle: { fontSize: 14 } },
-    tooltip: { trigger: 'axis' },
+    tooltip: { trigger: 'axis', formatter: function(params) { var html='<strong>'+params[0].axisValue+'</strong><br/>'; params.forEach(function(p){ var val=p.value!==null?p.value:'-'; html+=p.marker+p.seriesName+': '+val; if(p.seriesName.indexOf('去年')>=0&&(window._lyDetailDates2 ? window._lyDetailDates2[p.dataIndex] : null)){html+=' ('+(window._lyDetailDates2 ? window._lyDetailDates2[p.dataIndex] : null)+')';} else if(p.seriesName.indexOf('今年')>=0){html+=' ('+(window._cyDetailDates2 ? window._cyDetailDates2[p.dataIndex] : null)+')';} html+='<br/>'; }); return html; } },
     legend: { bottom: 5, data: ['港人(今年)', '港人(去年)', '总人数(今年)', '总人数(去年)'] },
     grid: { left: '3%', right: '4%', bottom: '15%', top: '15%', containLabel: true },
-    xAxis: { type: 'category', data: detailDates2.map(fmtD), axisLabel: { interval: 0, rotate: 45, fontSize: 10 } },
-    yAxis: { type: 'value', name: '万人次', max: 80, interval: 10 },
+    xAxis: { type: 'category', data: detailDates2.map(function(d,i){return (i===0?'2026 ':'')+fmtD(d);}), axisLabel: { interval: 0, rotate: 45, fontSize: 10 } },
+    yAxis: { type: 'value', name: '万人次' },
     series: [
-      { name: '港人(今年)', type: 'line', data: detailDates2.map(function(d) { return fmt2((DATA[d] && DATA[d].outbound ? DATA[d].outbound.hk : 0) / 10000); }), smooth: false, lineStyle: { color: '#00a1d5', width: 2 }, itemStyle: { color: '#00a1d5' }, showSymbol: false },
-      { name: '港人(去年)', type: 'line', data: lyDetailDates2.map(function(d) { return fmt2((DATA[d] && DATA[d].outbound ? DATA[d].outbound.hk : 0) / 10000); }), smooth: false, lineStyle: { color: '#00a1d5', width: 2, type: 'dashed' }, itemStyle: { color: '#00a1d5' }, showSymbol: false },
-      { name: '总人数(今年)', type: 'line', data: detailDates2.map(function(d) { return fmt2((DATA[d] && DATA[d].outbound ? DATA[d].outbound.total : 0) / 10000); }), smooth: false, lineStyle: { color: '#333333', width: 2 }, itemStyle: { color: '#333333' }, showSymbol: false },
+      { name: '港人(今年)', type: 'line', data: detailDates2.map(function(d) { return DATA[d] && DATA[d].outbound ? fmt2(DATA[d].outbound.hk / 10000) : null; }), smooth: false, lineStyle: { color: '#00a1d5', width: 2 }, itemStyle: { color: '#00a1d5' }, showSymbol: false, connectNulls: true },
+      { name: '港人(去年)', type: 'line', data: lyDetailDates2.map(function(d) { return d && DATA[d] && DATA[d].outbound ? fmt2(DATA[d].outbound.hk / 10000) : null; }), smooth: false, lineStyle: { color: '#00a1d5', width: 2, type: 'dashed' }, itemStyle: { color: '#00a1d5' }, showSymbol: false, connectNulls: true },
+      { name: '总人数(今年)', type: 'line', data: detailDates2.map(function(d) { return DATA[d] && DATA[d].outbound ? fmt2(DATA[d].outbound.total / 10000) : null; }), smooth: false, lineStyle: { color: '#333333', width: 2 }, itemStyle: { color: '#333333' }, showSymbol: false, connectNulls: true },
       { name: '总人数(去年)', type: 'line', data: lyDetailDates2.map(function(d) { return fmt2((DATA[d] && DATA[d].outbound ? DATA[d].outbound.total : 0) / 10000); }), smooth: false, lineStyle: { color: '#333333', width: 2, type: 'dashed' }, itemStyle: { color: '#333333' }, showSymbol: false }
     ]
   });
@@ -602,10 +603,11 @@ function genReportForWeek(wk){
       var c=calcWeekChg(thisYear,thisWeek,cat,dir);
       h+='<tr><td>'+catN[cat]+dn+'</td><td>'+fmtN(a0)+'</td><td class="'+clsC(c)+'">'+fmtP(c)+'</td>';
       dates0.forEach(function(d,i){
+        var hasData=!!DATA[d];
         var v=s0[dir][cat][i]||0;
         var pv=s1[dir][cat][i]||0;
         var dc=chg(v,pv);
-        h+='<td>'+fmtN(v)+'<span class="sub-text '+clsC(dc)+'">'+fmtP(dc)+'</span></td>';
+        h+='<td>'+(hasData?fmtN(v):'-')+(hasData?'<span class="sub-text '+clsC(dc)+'">'+fmtP(dc)+'</span>':'')+'</td>';
       });
       h+='<td>'+fmtN(a0)+'</td><td>'+fmtN(a1)+'</td><td>'+fmtN(avg(s2[dir][cat]))+'</td><td>'+fmtN(avg(s3[dir][cat]))+'</td></tr>';
     });
@@ -651,7 +653,7 @@ function genReportForWeek(wk){
   
   // 图表
   h+='<div class="section"><h3>年度对比趋势图</h3><div class="charts-row"><div class="chart-box"><h4>入境情况</h4><div id="ci" class="chart"></div></div></div><div class="charts-row"><div class="chart-box"><h4>出境情况</h4><div id="co" class="chart"></div></div></div></div>';
-  h+='<div class="section"><h3>细节趋势图（近6周）</h3><div class="charts-row"><div class="chart-box"><h4>入境细节</h4><div id="cid" class="chart"></div></div></div><div class="charts-row"><div class="chart-box"><h4>出境细节</h4><div id="cod" class="chart"></div></div></div></div>';
+  // 近6周图已删除
   
   // 小抄
   var ia=avg(s0.inbound.total),oa=avg(s0.outbound.total),ta=ia+oa;
@@ -673,27 +675,28 @@ function drawChartsForWeek(wk){
   var cy=al.filter(function(d){return d.startsWith('2026');});
   
   function fmt2(n){return Math.round(n*100)/100;}
-  
-  // 年度对比图 - 入境
+
+  // 年度对比图 - 入境（x轴按今年对齐去年同日）
   var ci=echarts.init(document.getElementById('ci'));
-  ci.setOption({title:{text:'入境情况年度对比',left:'center',textStyle:{fontSize:14}},tooltip:{trigger:'axis'},legend:{bottom:5,data:['港人(今年)','港人(去年)','内地旅客(今年)','内地旅客(去年)','总人数(今年)','总人数(去年)']},grid:{left:'3%',right:'4%',bottom:'15%',top:'15%',containLabel:true},xAxis:{type:'category',data:ly.map(fmtD),axisLabel:{interval:29}},yAxis:{type:'value',name:'万人次',max:80,interval:10},series:[
+
+  ci.setOption({title:{text:'入境情况年度对比',left:'center',textStyle:{fontSize:14}},tooltip:{trigger:'axis'},legend:{bottom:5,data:['港人(今年)','港人(去年)','内地旅客(今年)','内地旅客(去年)','总人数(今年)','总人数(去年)']},grid:{left:'3%',right:'4%',bottom:'15%',top:'15%',containLabel:true},xAxis:{type:'category',data:cy.map(fmtD),axisLabel:{interval:29}},yAxis:{type:'value',name:'万人次'},series:[
     {name:'港人(今年)',type:'line',data:cy.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.hk:0)/10000);}),smooth:false,lineStyle:{color:'#00a1d5',width:2},itemStyle:{color:'#00a1d5'},showSymbol:false},
-    {name:'港人(去年)',type:'line',data:ly.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.hk:0)/10000);}),smooth:false,lineStyle:{color:'#00a1d5',width:2,type:'dashed'},itemStyle:{color:'#00a1d5'},showSymbol:false},
+    {name:'港人(去年)',type:'line',data:cy.map(function(d){var ld=lySameDay(d);return ld&&DATA[ld]&&DATA[ld].inbound?fmt2(DATA[ld].inbound.hk/10000):null;}),smooth:false,lineStyle:{color:'#00a1d5',width:2,type:'dashed'},itemStyle:{color:'#00a1d5'},showSymbol:false,connectNulls:true},
     {name:'内地旅客(今年)',type:'line',data:cy.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.mainland:0)/10000);}),smooth:false,lineStyle:{color:'#df8f44',width:2},itemStyle:{color:'#df8f44'},showSymbol:false},
-    {name:'内地旅客(去年)',type:'line',data:ly.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.mainland:0)/10000);}),smooth:false,lineStyle:{color:'#df8f44',width:2,type:'dashed'},itemStyle:{color:'#df8f44'},showSymbol:false},
+    {name:'内地旅客(去年)',type:'line',data:cy.map(function(d){var ld=lySameDay(d);return ld&&DATA[ld]&&DATA[ld].inbound?fmt2(DATA[ld].inbound.mainland/10000):null;}),smooth:false,lineStyle:{color:'#df8f44',width:2,type:'dashed'},itemStyle:{color:'#df8f44'},showSymbol:false,connectNulls:true},
     {name:'总人数(今年)',type:'line',data:cy.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.total:0)/10000);}),smooth:false,lineStyle:{color:'#333333',width:2},itemStyle:{color:'#333333'},showSymbol:false},
-    {name:'总人数(去年)',type:'line',data:ly.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.total:0)/10000);}),smooth:false,lineStyle:{color:'#333333',width:2,type:'dashed'},itemStyle:{color:'#333333'},showSymbol:false}
+    {name:'总人数(去年)',type:'line',data:cy.map(function(d){var ld=lySameDay(d);return ld&&DATA[ld]&&DATA[ld].inbound?fmt2(DATA[ld].inbound.total/10000):null;}),smooth:false,lineStyle:{color:'#333333',width:2,type:'dashed'},itemStyle:{color:'#333333'},showSymbol:false,connectNulls:true}
   ]});
   
-  // 年度对比图 - 出境
+  // 年度对比图 - 出境（x轴按今年对齐去年同日）
   var co=echarts.init(document.getElementById('co'));
-  co.setOption({title:{text:'出境情况年度对比',left:'center',textStyle:{fontSize:14}},tooltip:{trigger:'axis'},legend:{bottom:5,data:['港人(今年)','港人(去年)','内地旅客(今年)','内地旅客(去年)','总人数(今年)','总人数(去年)']},grid:{left:'3%',right:'4%',bottom:'15%',top:'15%',containLabel:true},xAxis:{type:'category',data:ly.map(fmtD),axisLabel:{interval:29}},yAxis:{type:'value',name:'万人次',max:80,interval:10},series:[
+  co.setOption({title:{text:'出境情况年度对比',left:'center',textStyle:{fontSize:14}},tooltip:{trigger:'axis'},legend:{bottom:5,data:['港人(今年)','港人(去年)','内地旅客(今年)','内地旅客(去年)','总人数(今年)','总人数(去年)']},grid:{left:'3%',right:'4%',bottom:'15%',top:'15%',containLabel:true},xAxis:{type:'category',data:cy.map(fmtD),axisLabel:{interval:29}},yAxis:{type:'value',name:'万人次'},series:[
     {name:'港人(今年)',type:'line',data:cy.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.hk:0)/10000);}),smooth:false,lineStyle:{color:'#00a1d5',width:2},itemStyle:{color:'#00a1d5'},showSymbol:false},
-    {name:'港人(去年)',type:'line',data:ly.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.hk:0)/10000);}),smooth:false,lineStyle:{color:'#00a1d5',width:2,type:'dashed'},itemStyle:{color:'#00a1d5'},showSymbol:false},
+    {name:'港人(去年)',type:'line',data:cy.map(function(d){var ld=lySameDay(d);return ld&&DATA[ld]&&DATA[ld].outbound?fmt2(DATA[ld].outbound.hk/10000):null;}),smooth:false,lineStyle:{color:'#00a1d5',width:2,type:'dashed'},itemStyle:{color:'#00a1d5'},showSymbol:false,connectNulls:true},
     {name:'内地旅客(今年)',type:'line',data:cy.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.mainland:0)/10000);}),smooth:false,lineStyle:{color:'#df8f44',width:2},itemStyle:{color:'#df8f44'},showSymbol:false},
-    {name:'内地旅客(去年)',type:'line',data:ly.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.mainland:0)/10000);}),smooth:false,lineStyle:{color:'#df8f44',width:2,type:'dashed'},itemStyle:{color:'#df8f44'},showSymbol:false},
+    {name:'内地旅客(去年)',type:'line',data:cy.map(function(d){var ld=lySameDay(d);return ld&&DATA[ld]&&DATA[ld].outbound?fmt2(DATA[ld].outbound.mainland/10000):null;}),smooth:false,lineStyle:{color:'#df8f44',width:2,type:'dashed'},itemStyle:{color:'#df8f44'},showSymbol:false,connectNulls:true},
     {name:'总人数(今年)',type:'line',data:cy.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.total:0)/10000);}),smooth:false,lineStyle:{color:'#333333',width:2},itemStyle:{color:'#333333'},showSymbol:false},
-    {name:'总人数(去年)',type:'line',data:ly.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.total:0)/10000);}),smooth:false,lineStyle:{color:'#333333',width:2,type:'dashed'},itemStyle:{color:'#333333'},showSymbol:false}
+    {name:'总人数(去年)',type:'line',data:cy.map(function(d){var ld=lySameDay(d);return ld&&DATA[ld]&&DATA[ld].outbound?fmt2(DATA[ld].outbound.total/10000):null;}),smooth:false,lineStyle:{color:'#333333',width:2,type:'dashed'},itemStyle:{color:'#333333'},showSymbol:false,connectNulls:true}
   ]});
   
   // 细节趋势图数据范围
@@ -710,7 +713,7 @@ function drawChartsForWeek(wk){
   
   // 细节图 - 入境
   var cid=echarts.init(document.getElementById('cid'));
-  cid.setOption({title:{text:'入境细节趋势（近6周）',left:'center',textStyle:{fontSize:14}},tooltip:{trigger:'axis'},legend:{bottom:5,data:['港人(今年)','港人(去年)','内地旅客(今年)','内地旅客(去年)','外国旅客(今年)','外国旅客(去年)','总人数(今年)','总人数(去年)']},grid:{left:'3%',right:'4%',bottom:'15%',top:'15%',containLabel:true},xAxis:{type:'category',data:detailDates.map(fmtD),axisLabel:{interval:0,rotate:45,fontSize:10}},yAxis:{type:'value',name:'万人次',max:80,interval:10},series:[
+  cid.setOption({title:{text:'入境细节趋势（近6周）',left:'center',textStyle:{fontSize:14}},tooltip:{trigger:'axis'},legend:{bottom:5,data:['港人(今年)','港人(去年)','内地旅客(今年)','内地旅客(去年)','外国旅客(今年)','外国旅客(去年)','总人数(今年)','总人数(去年)']},grid:{left:'3%',right:'4%',bottom:'15%',top:'15%',containLabel:true},xAxis:{type:'category',data:detailDates.map(fmtD),axisLabel:{interval:0,rotate:45,fontSize:10}},yAxis:{type:'value',name:'万人次'},series:[
     {name:'港人(今年)',type:'line',data:detailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.hk:0)/10000);}),smooth:false,lineStyle:{color:'#00a1d5',width:2},itemStyle:{color:'#00a1d5'},showSymbol:false},
     {name:'港人(去年)',type:'line',data:lyDetailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.hk:0)/10000);}),smooth:false,lineStyle:{color:'#00a1d5',width:2,type:'dashed'},itemStyle:{color:'#00a1d5'},showSymbol:false},
     {name:'内地旅客(今年)',type:'line',data:detailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].inbound?DATA[d].inbound.mainland:0)/10000);}),smooth:false,lineStyle:{color:'#df8f44',width:2},itemStyle:{color:'#df8f44'},showSymbol:false},
@@ -723,7 +726,7 @@ function drawChartsForWeek(wk){
   
   // 细节图 - 出境
   var cod=echarts.init(document.getElementById('cod'));
-  cod.setOption({title:{text:'出境细节趋势（近6周）',left:'center',textStyle:{fontSize:14}},tooltip:{trigger:'axis'},legend:{bottom:5,data:['港人(今年)','港人(去年)','内地旅客(今年)','内地旅客(去年)','外国旅客(今年)','外国旅客(去年)','总人数(今年)','总人数(去年)']},grid:{left:'3%',right:'4%',bottom:'15%',top:'15%',containLabel:true},xAxis:{type:'category',data:detailDates.map(fmtD),axisLabel:{interval:0,rotate:45,fontSize:10}},yAxis:{type:'value',name:'万人次',max:80,interval:10},series:[
+  cod.setOption({title:{text:'出境细节趋势（近6周）',left:'center',textStyle:{fontSize:14}},tooltip:{trigger:'axis'},legend:{bottom:5,data:['港人(今年)','港人(去年)','内地旅客(今年)','内地旅客(去年)','外国旅客(今年)','外国旅客(去年)','总人数(今年)','总人数(去年)']},grid:{left:'3%',right:'4%',bottom:'15%',top:'15%',containLabel:true},xAxis:{type:'category',data:detailDates.map(fmtD),axisLabel:{interval:0,rotate:45,fontSize:10}},yAxis:{type:'value',name:'万人次'},series:[
     {name:'港人(今年)',type:'line',data:detailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.hk:0)/10000);}),smooth:false,lineStyle:{color:'#00a1d5',width:2},itemStyle:{color:'#00a1d5'},showSymbol:false},
     {name:'港人(去年)',type:'line',data:lyDetailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.hk:0)/10000);}),smooth:false,lineStyle:{color:'#00a1d5',width:2,type:'dashed'},itemStyle:{color:'#00a1d5'},showSymbol:false},
     {name:'内地旅客(今年)',type:'line',data:detailDates.map(function(d){return fmt2((DATA[d]&&DATA[d].outbound?DATA[d].outbound.mainland:0)/10000);}),smooth:false,lineStyle:{color:'#df8f44',width:2},itemStyle:{color:'#df8f44'},showSymbol:false},
@@ -873,108 +876,6 @@ function genPredict(){
   
   var cats=[{key:'total',name:'整体'},{key:'hk',name:'香港居民'},{key:'mainland',name:'内地旅客'},{key:'other',name:'外国旅客'}];
   
-  function predictWeek(weekType){
-    var results=[];
-    var notes=[];
-    
-    cats.forEach(function(cat){
-      if(cat.key==='total'){
-        var lastWeekIn=avg(sLastWeek.inbound.total);
-        var lastWeekOut=avg(sLastWeek.outbound.total);
-        var weekM2In=avg(sWeekM2.inbound.total);
-        var weekM2Out=avg(sWeekM2.outbound.total);
-        var weekM3In=avg(sWeekM3.inbound.total);
-        var weekM3Out=avg(sWeekM3.outbound.total);
-        var weekM4In=avg(sWeekM4.inbound.total);
-        var weekM4Out=avg(sWeekM4.outbound.total);
-        var lyThisIn=avg(lyThisWeek.inbound.total);
-        var lyThisOut=avg(lyThisWeek.outbound.total);
-        var lyLastIn=avg(lyLastWeek.inbound.total);
-        var lyLastOut=avg(lyLastWeek.outbound.total);
-        var lyNextIn=avg(lyNextWeek.inbound.total);
-        var lyNextOut=avg(lyNextWeek.outbound.total);
-      }else{
-        var lastWeekIn=avg(sLastWeek.inbound[cat.key]);
-        var lastWeekOut=avg(sLastWeek.outbound[cat.key]);
-        var weekM2In=avg(sWeekM2.inbound[cat.key]);
-        var weekM2Out=avg(sWeekM2.outbound[cat.key]);
-        var weekM3In=avg(sWeekM3.inbound[cat.key]);
-        var weekM3Out=avg(sWeekM3.outbound[cat.key]);
-        var weekM4In=avg(sWeekM4.inbound[cat.key]);
-        var weekM4Out=avg(sWeekM4.outbound[cat.key]);
-        var lyThisIn=avg(lyThisWeek.inbound[cat.key]);
-        var lyThisOut=avg(lyThisWeek.outbound[cat.key]);
-        var lyLastIn=avg(lyLastWeek.inbound[cat.key]);
-        var lyLastOut=avg(lyLastWeek.outbound[cat.key]);
-        var lyNextIn=avg(lyNextWeek.inbound[cat.key]);
-        var lyNextOut=avg(lyNextWeek.outbound[cat.key]);
-      }
-      
-      var lyIn=weekType==='本周'?lyThisIn:lyNextIn;
-      var lyOut=weekType==='本周'?lyThisOut:lyNextOut;
-      var lyPrevIn=weekType==='本周'?lyLastIn:lyThisIn;
-      var lyPrevOut=weekType==='本周'?lyLastOut:lyThisOut;
-      
-      var lyChgIn=(lyIn-lyPrevIn)/lyPrevIn;
-      var lyChgOut=(lyOut-lyPrevOut)/lyPrevOut;
-      var baseIn=lastWeekIn*(1+lyChgIn);
-      var baseOut=lastWeekOut*(1+lyChgOut);
-      
-      var avg4In=(weekM2In+weekM3In+weekM4In)/3;
-      var avg4Out=(weekM2Out+weekM3Out+weekM4Out)/3;
-      
-      var devIn=(lastWeekIn-avg4In)/avg4In;
-      var devOut=(lastWeekOut-avg4Out)/avg4Out;
-      
-      var finalIn=baseIn,finalOut=baseOut;
-      var beta=0.6;
-      var note='';
-      
-      if(devOut>0.10){
-        finalIn=baseIn*(1+beta*devOut);
-        finalOut=baseOut*(1-beta*devOut);
-        note=cat.name+'：出境偏离率'+fmtP(devOut*100)+'，触发修正';
-      }else if(devIn>0.10){
-        finalOut=baseOut*(1+beta*devIn);
-        note=cat.name+'：入境偏离率'+fmtP(devIn*100)+'，触发修正';
-      }
-      
-      var chgIn=(finalIn-lastWeekIn)/lastWeekIn*100;
-      var chgOut=(finalOut-lastWeekOut)/lastWeekOut*100;
-      
-      results.push({
-        name:cat.name,
-        outPred:finalOut,
-        outChg:chgOut,
-        inPred:finalIn,
-        inChg:chgIn
-      });
-      
-      if(note)notes.push(note);
-    });
-    
-    return{results:results,notes:notes};
-  }
-  
-  function genPredTable(title,startDate,endDate,predData){
-    var h='<div class="section"><h3>'+title+' ('+dts(startDate)+' 至 '+dts(endDate)+')</h3><table><thead><tr><th>人群</th><th>预测出境人数(万)</th><th>出境环比</th><th>预测入境人数(万)</th><th>入境环比</th></tr></thead><tbody>';
-    predData.results.forEach(function(r){
-      h+='<tr><td style="text-align:left;">'+r.name+'</td><td>'+fmtN(r.outPred)+'</td><td class="'+clsC(r.outChg)+'">'+fmtP(r.outChg)+'</td><td>'+fmtN(r.inPred)+'</td><td class="'+clsC(r.inChg)+'">'+fmtP(r.inChg)+'</td></tr>';
-    });
-    h+='</tbody></table>';
-    if(predData.notes.length>0){
-      h+='<p style="margin-top:10px;font-size:12px;color:#666;">📋 修正说明：'+predData.notes.join('；')+'</p>';
-    }else{
-      h+='<p style="margin-top:10px;font-size:12px;color:#666;">📋 上周数据无异常偏离，未触发修正</p>';
-    }
-    h+='</div>';
-    return h;
-  }
-  
-  var thisWeekPred=predictWeek('本周');
-  var nextWeekPred=predictWeek('下周');
-  
- var html='<div style="text-align:center;margin:30px 0;"><h2 style="font-size:20px;font-weight:bold;color:#2c3e50;display:inline-block;white-space:nowrap;">————————— 客流预测（参考去年趋势+4周偏离） ——————————</h2></div>';
 
   // 构建本周/下周日期数组
   var thisWeekDates=[];
@@ -984,7 +885,6 @@ function genPredict(){
 
   // 回归预测
   var baseThis=predBase(thisWeekDates),baseNext=predBase(nextWeekDates);
-  var cascThis=predCascade(thisWeekDates),cascNext=predCascade(nextWeekDates);
 
   var lwReal={hkOut:avg(sLastWeek.outbound.hk),hkIn:avg(sLastWeek.inbound.hk),cnOut:avg(sLastWeek.outbound.mainland),cnIn:avg(sLastWeek.inbound.mainland)};
 
@@ -992,8 +892,8 @@ function genPredict(){
 
   function genRegTable(label,dates,predObj,isCascade){
     var start=dts(new Date(dates[0])),end=dts(new Date(dates[dates.length-1]));
-    var h='<div class="section"><h3>'+label+' ('+start+' 至 '+end+') <span style="font-size:12px;color:#888;">｜R²: '+(isCascade?'A0.36/B0.55/C0.68/D0.57':'A0.36/B0.55/C0.68/D0.57')+'</span></h3>';
-    h+='<table><thead><tr><th>人群</th><th>预测出境日均(万)</th><th>出境环比</th><th>预测入境日均(万)</th><th>入境环比</th></tr></thead><tbody>';
+    var h='<div class="section"><h3>'+label+' ('+start+' 至 '+end+') <span style="font-size:12px;color:#888;">｜R²: '+(isCascade?'A0.50/B0.59/C0.72/D0.69':'A0.50/B0.59/C0.72/D0.69')+'</span></h3>';
+    h+='<table><thead><tr><th>人群</th><th>预测出境日均(万)</th><th>出境环比</th><th>预测入境日均(万)</th><th>入境环比</th><th style="font-weight:bold;">呼单量预测</th></tr></thead><tbody>';
     var rows=[
       {name:'整体',out:avgPred(predObj,'hkOut')+avgPred(predObj,'cnOut'),in:avgPred(predObj,'hkIn')+avgPred(predObj,'cnIn'),oprev:lwReal.hkOut+lwReal.cnOut,iprev:lwReal.hkIn+lwReal.cnIn},
       {name:'香港居民',out:avgPred(predObj,'hkOut'),in:avgPred(predObj,'hkIn'),oprev:lwReal.hkOut,iprev:lwReal.hkIn},
@@ -1004,30 +904,20 @@ function genPredict(){
       var oc=rw.oprev?((rw.out-rw.oprev)/rw.oprev*100):0;
       var ic=rw.iprev?((rw.in-rw.iprev)/rw.iprev*100):0;
       h+='<tr><td style="text-align:left;">'+rw.name+'</td>';
-      if(rw.name==='外国旅客'){h+='<td>—</td><td>—</td><td>—</td><td>—</td>';}
-      else{h+='<td>'+fmtN(rw.out)+'</td><td class="'+clsC(oc)+'">'+fmtP(oc)+'</td><td>'+fmtN(rw.in)+'</td><td class="'+clsC(ic)+'">'+fmtP(ic)+'</td>';}
+      if(rw.name==='外国旅客'){h+='<td>—</td><td>—</td><td>—</td><td>—</td><td></td>';}
+      else{h+='<td>'+fmtN(rw.out)+'</td><td class="'+clsC(oc)+'">'+fmtP(oc)+'</td><td>'+fmtN(rw.in)+'</td><td class="'+clsC(ic)+'">'+fmtP(ic)+'</td><td style="font-weight:bold;">*****</td>';}
       h+='</tr>';
     });
     h+='</tbody></table>';
-    h+='<p style="margin-top:6px;font-size:11px;color:#888;">'+(isCascade?'🔄 级联：A/D先算 → C用L1/L5/L7滞后，全部含月份系数':'📐 基础回归：含12月系数，C仅L7(永真)')+'</p></div>';
+    h+='<p style="margin-top:6px;font-size:11px;color:#888;">'+'📐 基础回归：含12月系数，C仅L7(永真)'+'</p></div>';
     return h;
   }
 
   var html='';
-  // 方法一
-  html+='<div style="text-align:center;margin:30px 0;padding:15px;background:#f0f4ff;border-radius:8px;"><h2 style="font-size:18px;font-weight:bold;color:#2c3e50;">————————— 方法一：客流预测（参考去年趋势+4周偏离） ——————————</h2><p style="font-size:11px;color:#888;margin-top:2px;">旧方法 — 去年同期周环比 × 上周实际 + 近4周偏离修正</p></div>';
-  html+=genPredTable('本周预测',thisWeekStart,thisWeekEnd,thisWeekPred);
-  html+=genPredTable('下周预测',nextWeekStart,nextWeekEnd,nextWeekPred);
-
-  // 方法二
-  html+='<div style="text-align:center;margin:30px 0;padding:15px;background:#f5fff0;border-radius:8px;"><h2 style="font-size:18px;font-weight:bold;color:#1e8449;">————————— 方法二：基础回归预测 ——————————</h2><p style="font-size:11px;color:#888;margin-top:2px;">4个OLS+月份系数，输入：雨量+周末+假期+活动+年份+月份</p></div>';
+  // 多元回归预测 V2
+  html+='<div style="text-align:center;margin:30px 0;padding:15px;background:#f5fff0;border-radius:8px;"><h2 style="font-size:18px;font-weight:bold;color:#1e8449;">————————— 多元回归预测 V2 ——————————</h2><p style="font-size:11px;color:#888;margin-top:2px;">4个OLS+月份系数，输入：雨量+周末+假期+活动+年份+月份</p></div>';
   html+=genRegTable('本周预测',thisWeekDates,baseThis,false);
   html+=genRegTable('下周预测',nextWeekDates,baseNext,false);
-
-  // 方法三
-  html+='<div style="text-align:center;margin:30px 0;padding:15px;background:#fff8f0;border-radius:8px;"><h2 style="font-size:18px;font-weight:bold;color:#e67e22;">————————— 方法三：级联回归预测 ——————————</h2><p style="font-size:11px;color:#888;margin-top:2px;">A/D先算 → C用L1/L5/L7滞后级联，全部含月份系数</p></div>';
-  html+=genRegTable('本周预测',thisWeekDates,cascThis,true);
-  html+=genRegTable('下周预测',nextWeekDates,cascNext,true);
 
   // 天气状态
   var wkeys=Object.keys(WEATHER);
@@ -1038,7 +928,6 @@ function genPredict(){
   }else{
     html+='<div class="section"><p style="font-size:12px;color:#e74c3c;">⚠️ 天气数据加载中，回归预测中雨量默认=1mm（无雨Low）</p></div>';
   }
-  html+='<div class="section"><p style="color:#e74c3c;font-size:12px;">⚠️ 预测基于历史数据推算，仅供参考；级联版误差逐日累积，远日期偏差较大</p></div>';
 
   // 异步加载天气后自动刷新
   fetch('https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=en')
